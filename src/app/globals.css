@@ -2,6 +2,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: var(--primary);
   --color-primary-deep: var(--primary);
@@ -9,6 +11,7 @@
   --color-primary-tint: var(--primary);
   --color-on-primary: var(--primary-foreground);
   --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent-foreground: var(--accent-foreground);
@@ -73,6 +76,7 @@
               radial-gradient(at 50% 80%, #edf7e7 0px, transparent 50%);
 }
 
+
 /* --- THEME DEFINITIONS --- */
 .theme-aesthetic {
   --primary: #4a154b;
@@ -93,6 +97,7 @@
               radial-gradient(at 50% 80%, #edf7e7 0px, transparent 50%);
 }
 
+
 .theme-neutral {
   --primary: #0f172a;
   --primary-foreground: #ffffff;
@@ -109,6 +114,7 @@
   --radius: 6px;
   --bg-image: none;
 }
+
 
 .theme-pastel {
   --primary: #6d28d9;
@@ -129,6 +135,7 @@
               radial-gradient(at 50% 85%, #dcfce7 0px, transparent 50%);
 }
 
+
 .theme-minimalist {
   --primary: #000000;
   --primary-foreground: #ffffff;
@@ -145,6 +152,7 @@
   --radius: 0px;
   --bg-image: none;
 }
+
 
 @layer base {
   * {
@@ -290,4 +298,20 @@
 
 .animate-slide-up {
   animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Global Form Inputs Contrast & Legibility Overrides */
+input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+select,
+textarea {
+  background-color: var(--secondary) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"])::placeholder,
+textarea::placeholder {
+  color: var(--muted-foreground) !important;
+  opacity: 0.85 !important;
 }

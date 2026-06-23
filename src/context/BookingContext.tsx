@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import type { FitnessClass, Booking, User, Customer, WaitlistEntry, SpotLock, PackType, Transaction } from '@/types';
 import { SEED_CLASSES } from '@/lib/seedData';
 import { parseClassDateTime } from '@/lib/utils';
-import { useWebSockets } from '@/hooks/useWebSockets';
+import { useWebSockets, SocketMessage } from '@/hooks/useWebSockets';
 import { registerPushNotifications } from '@/lib/pushNotifications';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -228,7 +228,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   const [hydrated,  setHydrated]  = useState(false);
 
   // ── WebSocket Terminal Syncing ──────────────────────────────────────────
-  const { sendMessage, sessionId } = useWebSockets(useCallback((msg) => {
+  const { sendMessage, sessionId } = useWebSockets(useCallback((msg: SocketMessage) => {
     switch (msg.type) {
       case 'SPOT_LOCKED':
         setSpotLocks(prev => {
@@ -274,7 +274,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
         break;
       case 'BOOKING_CANCELLED':
         setBookings(prev => {
-          const next = prev.map(b => b.id === msg.payload.bookingId ? { ...b, status: 'cancelled', cancelledAt: msg.payload.cancelledAt } : b);
+          const next = prev.map(b => b.id === msg.payload.bookingId ? { ...b, status: 'cancelled' as const, cancelledAt: msg.payload.cancelledAt } : b);
           saveToStorage('evolve_bookings', next);
           return next;
         });

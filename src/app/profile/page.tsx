@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useBooking } from '@/context/BookingContext';
-import { formatDate } from '@/lib/utils';
+import { formatDate, parseClassDateTime, cn } from '@/lib/utils';
 import { 
   ArrowLeft, 
   Search, 
@@ -174,131 +174,51 @@ export default function CustomerDirectoryPage() {
             </div>
             <button
               onClick={() => {
-                setShowRegForm(!showRegForm);
+                setShowRegForm(true);
                 setSelectedCustId(null);
               }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-primary text-on-primary text-xs font-bold uppercase tracking-wider rounded-pill hover:bg-primary-press active:scale-[0.98] transition-all cursor-pointer shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-2 bg-primary text-on-primary text-xs font-bold uppercase tracking-wider rounded-pill hover:bg-primary-press active:scale-[0.98] transition-all cursor-pointer shadow-sm shrink-0"
             >
               <UserPlus size={14} /> Add Client
             </button>
           </div>
 
-          {showRegForm ? (
-            /* Onboard new client form */
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-4 animate-in slide-in-from-left-5">
-              <div className="flex justify-between items-center border-b border-border pb-2">
-                <h3 className="font-bold text-sm text-primary uppercase font-mono">Register New Customer</h3>
-                <button onClick={() => setShowRegForm(false)} className="text-muted-foreground hover:text-foreground">
-                  <X size={16} />
-                </button>
+          {/* Scrollable list of active clients */}
+          <div className="bg-card border border-border rounded-3xl divide-y divide-border/60 max-h-[550px] overflow-y-auto shadow-sm bg-white">
+            {filteredCustomers.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-xl mb-1">🔍</p>
+                <p className="text-xs text-muted-foreground">No customer records found.</p>
               </div>
-
-              <form onSubmit={handleRegister} className="space-y-3.5 text-xs">
-                <div>
-                  <label className="block text-muted-foreground mb-1 font-semibold uppercase tracking-wider text-[10px] font-mono">Client Name *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="E.g. Sarah Jenkins"
-                    value={regName}
-                    onChange={e => setRegName(e.target.value)}
-                    className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-primary"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-muted-foreground mb-1 font-semibold uppercase tracking-wider text-[10px] font-mono">Client Email *</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="sarah@example.com"
-                    value={regEmail}
-                    onChange={e => setRegEmail(e.target.value)}
-                    className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-primary"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-muted-foreground mb-1 font-semibold uppercase tracking-wider text-[10px] font-mono">Phone Number (Optional)</label>
-                  <input
-                    type="tel"
-                    placeholder="+63 9xx xxx xxxx"
-                    value={regPhone}
-                    onChange={e => setRegPhone(e.target.value)}
-                    className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-primary"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-muted-foreground mb-1 font-semibold uppercase tracking-wider text-[10px] font-mono">Initial Credits</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={regCredits}
-                      onChange={e => setRegCredits(parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-muted-foreground mb-1 font-semibold uppercase tracking-wider text-[10px] font-mono">Membership Tier</label>
-                    <select
-                      value={regTier}
-                      onChange={e => setRegTier(e.target.value)}
-                      className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-primary"
-                    >
-                      <option value="None">None</option>
-                      <option value="Single Session">Single Session</option>
-                      <option value="5-Class Pack">5-Class Pack</option>
-                      <option value="10-Class Pack">10-Class Pack</option>
-                      <option value="Unlimited Gold">Unlimited Gold</option>
-                    </select>
-                  </div>
-                </div>
-
-                <button type="submit" className="btn-primary-pill w-full text-center uppercase tracking-widest cursor-pointer">
-                  Confirm Client Registration
-                </button>
-              </form>
-            </div>
-          ) : (
-            /* Scrollable list of active clients */
-            <div className="bg-card border border-border rounded-3xl divide-y divide-border/60 max-h-[550px] overflow-y-auto">
-              {filteredCustomers.length === 0 ? (
-                <div className="text-center py-10">
-                  <p className="text-xl mb-1">🔍</p>
-                  <p className="text-xs text-muted-foreground">No customer records found.</p>
-                </div>
-              ) : (
-                filteredCustomers.map(c => {
-                  const isSelected = c.id === selectedCustId;
-                  return (
-                    <button
-                      key={c.id}
-                      onClick={() => handleSelectCustomer(c.id)}
-                      className={`w-full text-left p-4 flex justify-between items-center transition-colors cursor-pointer ${
-                        isSelected ? 'bg-primary/10' : 'hover:bg-secondary/40'
-                      }`}
-                    >
-                      <div>
-                        <p className="font-bold text-foreground">{c.name}</p>
-                        <p className="text-xs text-muted-foreground">{c.email}</p>
-                        {c.phone && <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{c.phone}</p>}
-                      </div>
-                      <div className="text-right">
-                        <Badge variant="outline" className={`font-mono text-xs font-black ${
-                          c.credits > 0 ? 'border-primary/20 text-primary bg-primary/5' : 'border-border text-muted-foreground'
-                        }`}>
-                          {c.credits === 999 ? '∞' : c.credits} credits
-                        </Badge>
-                        <p className="text-[10px] text-muted-foreground font-semibold mt-1 uppercase tracking-wider">{c.membershipTier}</p>
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          )}
+            ) : (
+              filteredCustomers.map(c => {
+                const isSelected = c.id === selectedCustId;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => handleSelectCustomer(c.id)}
+                    className={`w-full text-left p-4 flex justify-between items-center transition-colors cursor-pointer ${
+                      isSelected ? 'bg-primary/10 border-l-4 border-l-primary' : 'hover:bg-secondary/40'
+                    }`}
+                  >
+                    <div>
+                      <p className="font-bold text-foreground">{c.name}</p>
+                      <p className="text-xs text-muted-foreground">{c.email}</p>
+                      {c.phone && <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{c.phone}</p>}
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="outline" className={`font-mono text-xs font-black ${
+                        c.credits > 0 ? 'border-primary/20 text-primary bg-primary/5' : 'border-border text-muted-foreground'
+                      }`}>
+                        {c.credits === 999 ? '∞' : c.credits} credits
+                      </Badge>
+                      <p className="text-[10px] text-muted-foreground font-semibold mt-1 uppercase tracking-wider">{c.membershipTier}</p>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
         </div>
 
         {/* Right Side: Manage client details desk */}
@@ -418,6 +338,105 @@ export default function CustomerDirectoryPage() {
                 </div>
               </div>
 
+              {/* Enterprise Customer Intelligence & Recommendations */}
+              {(() => {
+                const ltv = activeCustomerBookings.reduce((sum, b) => sum + (b.status !== 'cancelled' ? b.amountPaid : 0), 0);
+                
+                // Badges determination
+                const badges = [];
+                if (activeCustomer.totalClassesAttended >= 20) {
+                  badges.push({ name: 'Studio Legend', color: 'bg-indigo-500/10 text-indigo-700 border-indigo-500/25', icon: '👑' });
+                } else if (activeCustomer.totalClassesAttended >= 8) {
+                  badges.push({ name: 'Dedicated Athlete', color: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/25', icon: '🏋️' });
+                }
+                
+                if (activeCustomer.streak >= 5) {
+                  badges.push({ name: 'Super Streak', color: 'bg-orange-500/10 text-orange-700 border-orange-500/25', icon: '🔥' });
+                }
+                
+                if (ltv >= 200) {
+                  badges.push({ name: 'VIP Spender', color: 'bg-amber-500/10 text-amber-700 border-amber-500/25', icon: '💎' });
+                } else if (ltv === 0 && activeCustomer.totalClassesAttended === 0) {
+                  badges.push({ name: 'New Lead', color: 'bg-sky-500/10 text-sky-700 border-sky-500/25', icon: '🌟' });
+                }
+
+                // Smart Recommendation
+                let recommendation = {
+                  status: 'Stable',
+                  text: 'Profile is active. Standard service applies.',
+                  type: 'info'
+                };
+                
+                if (activeCustomer.credits === 0 && activeCustomer.membershipTier === 'None') {
+                  recommendation = {
+                    status: 'High Churn Risk',
+                    text: 'Client has 0 credits. Offer Evolve package upgrades or a 10-Class Pack today!',
+                    type: 'warning'
+                  };
+                } else if (activeCustomer.totalClassesAttended > 5 && (activeCustomer.membershipTier === 'Single Session' || activeCustomer.membershipTier === 'None')) {
+                  recommendation = {
+                    status: 'Upgrade Candidate',
+                    text: 'High attendance logged. Recommend Unlimited Gold membership for better value.',
+                    type: 'upgrade'
+                  };
+                } else if (activeCustomer.streak >= 3) {
+                  recommendation = {
+                    status: 'Milestone Engagement',
+                    text: 'Streaking client! Reward their consistency with 10% off using code EVOLVE10.',
+                    type: 'reward'
+                  };
+                }
+
+                return (
+                  <div className="bg-white border border-border rounded-3xl p-5 space-y-4 shadow-sm">
+                    <div className="flex items-center justify-between border-b border-border/50 pb-3">
+                      <div>
+                        <h4 className="font-heading font-black text-xs uppercase tracking-wider text-primary">Customer Intelligence Desk</h4>
+                        <p className="text-[10px] text-muted-foreground font-semibold">Real-time enterprise metrics & recommendation telemetry</p>
+                      </div>
+                      <Badge className="bg-primary/5 text-primary border-primary/20 text-[9px] font-mono font-bold">
+                        LTV: ${ltv.toFixed(2)}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Loyalty Milestones */}
+                      <div className="space-y-2">
+                        <span className="block text-[9px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Client Milestones</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {badges.length === 0 ? (
+                            <span className="text-[10px] text-muted-foreground italic font-medium">No milestones earned yet. Keep booking!</span>
+                          ) : (
+                            badges.map((b, bi) => (
+                              <span key={bi} className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase border", b.color)}>
+                                <span>{b.icon}</span> {b.name}
+                              </span>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      {/* AI Reception Recommendation */}
+                      <div className="space-y-1.5 bg-secondary/20 border border-border/40 p-3 rounded-2xl">
+                        <div className="flex items-center gap-1.5">
+                          <span className={cn("w-1.5 h-1.5 rounded-full", 
+                            recommendation.type === 'warning' ? 'bg-red-500 animate-pulse' :
+                            recommendation.type === 'upgrade' ? 'bg-indigo-500' :
+                            recommendation.type === 'reward' ? 'bg-orange-500' : 'bg-sky-500'
+                          )} />
+                          <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-foreground">
+                            Action Desk: {recommendation.status}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground leading-relaxed font-semibold">
+                          {recommendation.text}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Roster of Upcoming booked classes */}
               <div className="space-y-3">
                 <h4 className="font-bold text-sm text-foreground uppercase tracking-wide">Upcoming Schedule Books ({upcomingBookings.length})</h4>
@@ -430,7 +449,10 @@ export default function CustomerDirectoryPage() {
                     {upcomingBookings.map(b => {
                       const cls = getClassById(b.classId);
                       if (!cls) return null;
-                      const isLate = new Date(`${cls.date}T${cls.time.includes('PM') ? parseInt(cls.time) + 12 : parseInt(cls.time)}:00:00`) < new Date();
+                      const classStart = parseClassDateTime(cls.date, cls.time);
+                      const now = new Date();
+                      const hoursUntilClass = (classStart.getTime() - now.getTime()) / (1000 * 60 * 60);
+                      const isLate = hoursUntilClass < 12;
                       
                       return (
                         <div key={b.id} className="bg-card border border-border rounded-2xl p-4 flex justify-between items-start gap-4 text-xs font-mono">
@@ -509,6 +531,114 @@ export default function CustomerDirectoryPage() {
           )}
         </div>
       </div>
+
+      {/* Overlay Modal for Client Onboarding */}
+      {showRegForm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 border border-border rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col">
+            {/* Modal Header */}
+            <div className="bg-primary/5 border-b border-border/80 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-primary/20 flex items-center justify-center text-primary shadow-sm">
+                  <UserPlus size={16} />
+                </div>
+                <div>
+                  <h2 className="font-heading font-black text-sm uppercase tracking-wider text-foreground">Register New Client</h2>
+                  <p className="text-[10px] text-muted-foreground font-semibold">Onboard a guest to the POS registry</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowRegForm(false)}
+                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-destructive/20 hover:text-red-400 transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleRegister} className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Full Name <span className="text-destructive">*</span></label>
+                <input
+                  type="text"
+                  required
+                  value={regName}
+                  onChange={e => setRegName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-sm bg-secondary border border-border rounded-xl focus:outline-none focus:border-primary font-semibold"
+                  placeholder="e.g. John Doe"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Email Address <span className="text-destructive">*</span></label>
+                <input
+                  type="email"
+                  required
+                  value={regEmail}
+                  onChange={e => setRegEmail(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-sm bg-secondary border border-border rounded-xl focus:outline-none focus:border-primary"
+                  placeholder="e.g. john@example.com"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Phone Number</label>
+                <input
+                  type="tel"
+                  value={regPhone}
+                  onChange={e => setRegPhone(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-sm bg-secondary border border-border rounded-xl focus:outline-none focus:border-primary font-mono"
+                  placeholder="e.g. +1 (555) 000-0000"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Initial Credits</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={regCredits}
+                    onChange={e => setRegCredits(parseInt(e.target.value) || 0)}
+                    className="w-full px-3.5 py-2.5 text-sm bg-secondary border border-border rounded-xl focus:outline-none focus:border-primary font-mono"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Membership Tier</label>
+                  <select
+                    value={regTier}
+                    onChange={e => setRegTier(e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-sm bg-secondary border border-border rounded-xl focus:outline-none focus:border-primary"
+                  >
+                    <option value="None">None</option>
+                    <option value="Single Session">Single Session</option>
+                    <option value="5-Class Pack">5-Class Pack</option>
+                    <option value="10-Class Pack">10-Class Pack</option>
+                    <option value="Unlimited Gold">Unlimited Gold</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRegForm(false)}
+                  className="flex-1 py-3 rounded-pill bg-secondary text-ink text-xs font-bold uppercase tracking-widest hover:bg-secondary-press active:scale-[0.98] transition-all cursor-pointer border border-border"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 rounded-pill bg-primary text-on-primary text-xs font-bold uppercase tracking-widest hover:bg-primary-press active:scale-[0.98] transition-all cursor-pointer shadow-md"
+                >
+                  Register Client
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

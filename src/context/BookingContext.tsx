@@ -1,16 +1,25 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import type { FitnessClass, Booking, User, Customer, WaitlistEntry, PackType } from '@/types';
+import type { FitnessClass, Booking, User, Customer, WaitlistEntry, SpotLock, PackType, Transaction } from '@/types';
 import { SEED_CLASSES } from '@/lib/seedData';
+import { parseClassDateTime } from '@/lib/utils';
+import { useWebSockets } from '@/hooks/useWebSockets';
+import { registerPushNotifications } from '@/lib/pushNotifications';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TYPES
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface BookingContextType {
-  user: User; // Logged-in Admin (Owner)
+  user: User;
   customers: Customer[];
   classes: FitnessClass[];
   bookings: Booking[];
   waitlist: WaitlistEntry[];
+
   updateUser: (updates: Partial<User>) => void;
+
   bookSpot: (
     classId: string,
     spotNumber: number,
@@ -20,15 +29,58 @@ interface BookingContextType {
     customerPhone?: string,
     promoCode?: string
   ) => { success: boolean; message: string; booking?: Booking };
+
   cancelBooking: (bookingId: string) => { success: boolean; message: string };
+
+  checkInBooking: (bookingId: string) => { success: boolean; message: string };
+
   buyCreditsForCustomer: (customerId: string, packType: PackType) => void;
-  addOrUpdateCustomer: (customerData: { id?: string; name: string; email: string; phone?: string; credits: number; membershipTier: string }) => Customer;
+
+  addOrUpdateCustomer: (
+    customerData: {
+      id?: string;
+      name: string;
+      email: string;
+      phone?: string;
+      credits: number;
+      membershipTier: string;
+      emergencyContactName?: string;
+      emergencyContactPhone?: string;
+      emergencyContactRelation?: string;
+      medicalNotes?: string;
+      birthday?: string;
+      gender?: string;
+      address?: string;
+      referralSource?: string;
+      communicationConsent?: boolean;
+    }
+  ) => Customer;
+
   getClassById: (classId: string) => FitnessClass | undefined;
   getBookingForSpot: (classId: string, spotNumber: number) => Booking | undefined;
+
   joinWaitlist: (classId: string, customerName: string, customerEmail: string, customerPhone?: string) => void;
   leaveWaitlist: (classId: string, customerEmail: string) => void;
   isOnWaitlist: (classId: string, customerEmail: string) => boolean;
+
+  promoteFromWaitlist: (
+    classId: string,
+    customerEmail: string,
+    method?: 'credit' | 'card' | 'cash'
+  ) => { success: boolean; message: string; booking?: Booking };
+
+  releaseExpiredHolds: () => void;
+  spotLocks: SpotLock[];
+  lockSpot: (classId: string, spotNumber: number) => { success: boolean; message: string };
+  unlockSpot: (classId: string, spotNumber: number) => void;
+  transactions: Transaction[];
+  addTransaction: (tx: Omit<Transaction, 'id' | 'timestamp'> & { id?: string; timestamp?: string }) => Transaction;
+  updateTransactionStatus: (id: string, status: Transaction['status']) => void;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DEFAULTS
+// ─────────────────────────────────────────────────────────────────────────────
 
 const defaultAdmin: User = {
   name: 'Cams (Admin)',
@@ -43,26 +95,106 @@ const defaultAdmin: User = {
 };
 
 const defaultCustomers: Customer[] = [
-  { id: 'cust-1', name: 'Mike Santos', email: 'mike@evolve.studio', phone: '+63 912 345 6789', credits: 5, membershipTier: 'Unlimited Gold', streak: 5, totalClassesAttended: 23 },
-  { id: 'cust-2', name: 'Sarah Connor', email: 'sarah@resistance.org', phone: '+63 923 456 7890', credits: 0, membershipTier: 'None', streak: 0, totalClassesAttended: 2 },
-  { id: 'cust-3', name: 'John Doe', email: 'john.doe@gmail.com', phone: '+63 934 567 8901', credits: 12, membershipTier: '10-Class Pack', streak: 2, totalClassesAttended: 8 },
-  { id: 'cust-4', name: 'Jane Smith', email: 'jane.smith@outlook.com', phone: '+63 945 678 9012', credits: 1, membershipTier: 'Single Session', streak: 1, totalClassesAttended: 1 },
+  {
+    id: 'cust-1',
+    name: 'Mike Santos',
+    email: 'mike@evolve.studio',
+    phone: '+63 912 345 6789',
+    credits: 5,
+    membershipTier: 'Unlimited Gold',
+    streak: 5,
+    totalClassesAttended: 23,
+    birthday: '1990-05-15',
+    gender: 'Male',
+    address: '123 Pioneer St, Mandaluyong, Metro Manila',
+    referralSource: 'Instagram',
+    communicationConsent: true,
+    emergencyContactName: 'Maria Santos',
+    emergencyContactPhone: '+63 917 111 2222',
+    emergencyContactRelation: 'Spouse',
+    medicalNotes: 'Occasional lower back stiffness. Prefers lighter spring settings on reformer.'
+  },
+  {
+    id: 'cust-2',
+    name: 'Sarah Connor',
+    email: 'sarah@resistance.org',
+    phone: '+63 923 456 7890',
+    credits: 0,
+    membershipTier: 'None',
+    streak: 0,
+    totalClassesAttended: 2,
+    birthday: '1984-11-10',
+    gender: 'Female',
+    address: '456 resistance camp road, Sector 4',
+    referralSource: 'Google',
+    communicationConsent: true,
+    emergencyContactName: 'John Connor',
+    emergencyContactPhone: '+63 918 333 4444',
+    emergencyContactRelation: 'Son',
+    medicalNotes: 'Prior shoulder surgery (AC joint). Avoid maximum overhead extension under high resistance.'
+  },
+  {
+    id: 'cust-3',
+    name: 'John Doe',
+    email: 'john.doe@gmail.com',
+    phone: '+63 934 567 8901',
+    credits: 12,
+    membershipTier: '10-Class Pack',
+    streak: 2,
+    totalClassesAttended: 8,
+    birthday: '1992-08-25',
+    gender: 'Male',
+    address: 'Suite 9A, Axis Towers, BGC, Taguig',
+    referralSource: 'Friend',
+    communicationConsent: false,
+    emergencyContactName: 'Jane Doe',
+    emergencyContactPhone: '+63 919 555 6666',
+    emergencyContactRelation: 'Sister',
+    medicalNotes: 'No medical conditions or physical limitations reported. Full reformer capacity.'
+  },
+  {
+    id: 'cust-4',
+    name: 'Jane Smith',
+    email: 'jane.smith@outlook.com',
+    phone: '+63 945 678 9012',
+    credits: 1,
+    membershipTier: 'Single Session',
+    streak: 1,
+    totalClassesAttended: 1,
+    birthday: '1995-03-04',
+    gender: 'Female',
+    address: '789 Emerald Condominiums, Ortigas, Pasig',
+    referralSource: 'Walk-in',
+    communicationConsent: true,
+    emergencyContactName: 'Robert Smith',
+    emergencyContactPhone: '+63 920 777 8888',
+    emergencyContactRelation: 'Father',
+    medicalNotes: 'Mild asthma. Always carries inhaler in training bag.'
+  },
 ];
 
 const CREDIT_PACKS = {
-  single: { credits: 1, price: 35 },
-  five: { credits: 5, price: 160 },
-  ten: { credits: 10, price: 300 },
+  single:    { credits: 1,   price: 35  },
+  five:      { credits: 5,   price: 160 },
+  ten:       { credits: 10,  price: 300 },
   unlimited: { credits: 999, price: 199 },
 };
 
-const BookingContext = createContext<BookingContextType | undefined>(undefined);
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPER — Parse "7:00 AM" / "6:00 PM" into a full Date object
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOCALSTORAGE HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
 
 function loadFromStorage<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
   try {
     const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
+    return raw ? (JSON.parse(raw) as T) : fallback;
   } catch {
     return fallback;
   }
@@ -75,53 +207,189 @@ function saveToStorage(key: string, value: unknown) {
   } catch {}
 }
 
-export function BookingProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User>(defaultAdmin);
-  const [customers, setCustomers] = useState<Customer[]>(defaultCustomers);
-  const [classes, setClasses] = useState<FitnessClass[]>(SEED_CLASSES);
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTEXT
+// ─────────────────────────────────────────────────────────────────────────────
 
+const BookingContext = createContext<BookingContextType | undefined>(undefined);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROVIDER
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function BookingProvider({ children }: { children: React.ReactNode }) {
+  const [user,      setUser]      = useState<User>(defaultAdmin);
+  const [customers, setCustomers] = useState<Customer[]>(defaultCustomers);
+  const [classes,   setClasses]   = useState<FitnessClass[]>(SEED_CLASSES);
+  const [bookings,  setBookings]  = useState<Booking[]>([]);
+  const [waitlist,  setWaitlist]  = useState<WaitlistEntry[]>([]);
+  const [spotLocks, setSpotLocks] = useState<SpotLock[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [hydrated,  setHydrated]  = useState(false);
+
+  // ── WebSocket Terminal Syncing ──────────────────────────────────────────
+  const { sendMessage, sessionId } = useWebSockets(useCallback((msg) => {
+    switch (msg.type) {
+      case 'SPOT_LOCKED':
+        setSpotLocks(prev => {
+          const next = [
+            ...prev.filter(l => !(l.classId === msg.payload.classId && l.spotNumber === msg.payload.spotNumber)),
+            msg.payload
+          ];
+          saveToStorage('evolve_spot_locks', next);
+          return next;
+        });
+        break;
+      case 'SPOT_UNLOCKED':
+        setSpotLocks(prev => {
+          const next = prev.filter(
+            l => !(l.classId === msg.payload.classId && l.spotNumber === msg.payload.spotNumber)
+          );
+          saveToStorage('evolve_spot_locks', next);
+          return next;
+        });
+        break;
+      case 'BOOKING_CREATED':
+        setBookings(prev => {
+          const next = [...prev, msg.payload.booking];
+          saveToStorage('evolve_bookings', next);
+          return next;
+        });
+        setClasses(prev => {
+          const next = prev.map(c => 
+            c.id === msg.payload.booking.classId
+              ? { ...c, bookedSpots: [...c.bookedSpots, msg.payload.booking.spotNumber] }
+              : c
+          );
+          saveToStorage('evolve_classes', next);
+          return next;
+        });
+        setWaitlist(prev => {
+          const next = prev.filter(
+            w => !(w.classId === msg.payload.booking.classId && w.customerEmail.toLowerCase() === msg.payload.booking.customerEmail.toLowerCase())
+          );
+          saveToStorage('evolve_waitlist', next);
+          return next;
+        });
+        break;
+      case 'BOOKING_CANCELLED':
+        setBookings(prev => {
+          const next = prev.map(b => b.id === msg.payload.bookingId ? { ...b, status: 'cancelled', cancelledAt: msg.payload.cancelledAt } : b);
+          saveToStorage('evolve_bookings', next);
+          return next;
+        });
+        setClasses(prev => {
+          const next = prev.map(c => 
+            c.id === msg.payload.classId
+              ? { ...c, bookedSpots: c.bookedSpots.filter(s => s !== msg.payload.spotNumber) }
+              : c
+          );
+          saveToStorage('evolve_classes', next);
+          return next;
+        });
+        break;
+      case 'CUSTOMER_UPDATED':
+        setCustomers(prev => {
+          const next = prev.map(c => c.id === msg.payload.id ? msg.payload : c);
+          saveToStorage('evolve_customers', next);
+          return next;
+        });
+        break;
+      case 'TRANSACTION_UPDATED':
+        setTransactions(prev => {
+          const next = [
+            ...prev.filter(t => t.id !== msg.payload.id),
+            msg.payload
+          ].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+          saveToStorage('evolve_transactions', next);
+          return next;
+        });
+        break;
+    }
+  }, []));
+
+  // sessionId is established dynamically in useWebSockets
+
+  // ── Hydrate from LocalStorage once on mount ──────────────────────────────
   useEffect(() => {
-    const savedAdmin = loadFromStorage<User>('evolve_admin', defaultAdmin);
+    const savedAdmin     = loadFromStorage<User>('evolve_admin', defaultAdmin);
     const savedCustomers = loadFromStorage<Customer[]>('evolve_customers', defaultCustomers);
-    const savedBookings = loadFromStorage<Booking[]>('evolve_bookings', []);
-    const savedWaitlist = loadFromStorage<WaitlistEntry[]>('evolve_waitlist', []);
-    const savedClasses = loadFromStorage<FitnessClass[]>('evolve_classes', SEED_CLASSES);
+    const savedBookings  = loadFromStorage<Booking[]>('evolve_bookings', []);
+    const savedWaitlist  = loadFromStorage<WaitlistEntry[]>('evolve_waitlist', []);
+    const savedClasses   = loadFromStorage<FitnessClass[]>('evolve_classes', SEED_CLASSES);
+    const savedLocks     = loadFromStorage<SpotLock[]>('evolve_spot_locks', []);
+    let savedTransactions = loadFromStorage<Transaction[]>('evolve_transactions', []);
+
+    // Auto-generate transaction logs from bookings if transactions are empty
+    if (savedTransactions.length === 0 && savedBookings.length > 0) {
+      savedTransactions = savedBookings.map(b => {
+        const cls = savedClasses.find(c => c.id === b.classId);
+        return {
+          id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          type: 'booking',
+          timestamp: b.bookedAt,
+          customerName: b.customerName,
+          customerEmail: b.customerEmail,
+          customerPhone: b.customerPhone,
+          description: cls ? `${cls.title} (Spot #${b.spotNumber})` : `Class Booking (Spot #${b.spotNumber})`,
+          paymentMethod: b.paymentMethod,
+          amount: b.amountPaid,
+          status: b.status === 'cancelled' ? 'cancelled' : 'paid',
+          bookingId: b.id,
+        };
+      });
+      saveToStorage('evolve_transactions', savedTransactions);
+    }
 
     setUser(savedAdmin);
     setCustomers(savedCustomers);
     setBookings(savedBookings);
     setWaitlist(savedWaitlist);
     setClasses(savedClasses);
+    setSpotLocks(savedLocks);
+    setTransactions(savedTransactions);
     setHydrated(true);
+    registerPushNotifications();
   }, []);
 
-  useEffect(() => {
-    if (!hydrated) return;
-    saveToStorage('evolve_admin', user);
-  }, [user, hydrated]);
+  // ── Persist on every state change (post-hydration) ───────────────────────
+  useEffect(() => { if (hydrated) saveToStorage('evolve_admin',     user);      }, [user,      hydrated]);
+  useEffect(() => { if (hydrated) saveToStorage('evolve_customers', customers); }, [customers, hydrated]);
+  useEffect(() => { if (hydrated) saveToStorage('evolve_bookings',  bookings);  }, [bookings,  hydrated]);
+  useEffect(() => { if (hydrated) saveToStorage('evolve_waitlist',  waitlist);  }, [waitlist,  hydrated]);
+  useEffect(() => { if (hydrated) saveToStorage('evolve_classes',   classes);   }, [classes,   hydrated]);
+  useEffect(() => { if (hydrated) saveToStorage('evolve_spot_locks', spotLocks); }, [spotLocks, hydrated]);
+  useEffect(() => { if (hydrated) saveToStorage('evolve_transactions', transactions); }, [transactions, hydrated]);
 
+  // ── Live Real-Time Multi-Terminal Sync (simulated via storage events) ───
   useEffect(() => {
-    if (!hydrated) return;
-    saveToStorage('evolve_customers', customers);
-  }, [customers, hydrated]);
+    const handleStorage = (e: StorageEvent) => {
+      if (!e.key) return;
+      try {
+        if (e.key === 'evolve_bookings') {
+          setBookings(loadFromStorage<Booking[]>('evolve_bookings', []));
+        } else if (e.key === 'evolve_classes') {
+          setClasses(loadFromStorage<FitnessClass[]>('evolve_classes', SEED_CLASSES));
+        } else if (e.key === 'evolve_waitlist') {
+          setWaitlist(loadFromStorage<WaitlistEntry[]>('evolve_waitlist', []));
+        } else if (e.key === 'evolve_spot_locks') {
+          setSpotLocks(loadFromStorage<SpotLock[]>('evolve_spot_locks', []));
+        } else if (e.key === 'evolve_customers') {
+          setCustomers(loadFromStorage<Customer[]>('evolve_customers', defaultCustomers));
+        } else if (e.key === 'evolve_transactions') {
+          setTransactions(loadFromStorage<Transaction[]>('evolve_transactions', []));
+        }
+      } catch (err) {
+        console.error('Real-time synchronization error:', err);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
-  useEffect(() => {
-    if (!hydrated) return;
-    saveToStorage('evolve_bookings', bookings);
-  }, [bookings, hydrated]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    saveToStorage('evolve_waitlist', waitlist);
-  }, [waitlist, hydrated]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    saveToStorage('evolve_classes', classes);
-  }, [classes, hydrated]);
+  // ─────────────────────────────────────────────────────────────────────────
+  // BASIC READS
+  // ─────────────────────────────────────────────────────────────────────────
 
   const updateUser = useCallback((updates: Partial<User>) => {
     setUser(prev => ({ ...prev, ...updates }));
@@ -132,194 +400,636 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   }, [classes]);
 
   const getBookingForSpot = useCallback((classId: string, spotNumber: number) => {
-    return bookings.find(b => b.classId === classId && b.spotNumber === spotNumber && b.status !== 'cancelled');
+    return bookings.find(
+      b => b.classId === classId && b.spotNumber === spotNumber && b.status !== 'cancelled'
+    );
   }, [bookings]);
 
   const isOnWaitlist = useCallback((classId: string, customerEmail: string) => {
-    return waitlist.some(w => w.classId === classId && w.customerEmail.toLowerCase() === customerEmail.toLowerCase());
+    return waitlist.some(
+      w => w.classId === classId && w.customerEmail.toLowerCase() === customerEmail.toLowerCase()
+    );
   }, [waitlist]);
 
-  const addOrUpdateCustomer = useCallback((customerData: { id?: string; name: string; email: string; phone?: string; credits: number; membershipTier: string }): Customer => {
-    let resultCustomer: Customer;
-    setCustomers(prev => {
-      const existingIdx = customerData.id ? prev.findIndex(c => c.id === customerData.id) : prev.findIndex(c => c.email.toLowerCase() === customerData.email.toLowerCase());
-      
-      if (existingIdx > -1) {
-        const updated = {
-          ...prev[existingIdx],
-          name: customerData.name,
-          email: customerData.email,
-          phone: customerData.phone,
-          credits: customerData.credits,
-          membershipTier: customerData.membershipTier,
-        };
-        const next = [...prev];
-        next[existingIdx] = updated;
-        resultCustomer = updated;
-        return next;
-      } else {
-        const newCustomer: Customer = {
-          id: `cust-${Date.now()}`,
-          name: customerData.name,
-          email: customerData.email,
-          phone: customerData.phone,
-          credits: customerData.credits,
-          membershipTier: customerData.membershipTier || 'None',
-          streak: 0,
-          totalClassesAttended: 0,
-        };
-        resultCustomer = newCustomer;
-        return [...prev, newCustomer];
-      }
+  // ── Concurrent Spot Locking Functions ──────────────────────────────────
+  const lockSpot = useCallback((classId: string, spotNumber: number): { success: boolean; message: string } => {
+    const now = new Date();
+    // Remove expired locks first (30 seconds)
+    let currentLocks = loadFromStorage<SpotLock[]>('evolve_spot_locks', []);
+    currentLocks = currentLocks.filter(l => {
+      const lockTime = new Date(l.lockedAt);
+      const diffMs = now.getTime() - lockTime.getTime();
+      return diffMs < 30000;
     });
 
-    // Generate safe fallback return value
-    return resultCustomer! || {
-      id: customerData.id || `cust-${Date.now()}`,
-      name: customerData.name,
-      email: customerData.email,
-      phone: customerData.phone,
-      credits: customerData.credits,
-      membershipTier: customerData.membershipTier || 'None',
-      streak: 0,
-      totalClassesAttended: 0,
+    // Check if locked by another session
+    const activeLock = currentLocks.find(
+      l => l.classId === classId && l.spotNumber === spotNumber && l.lockedBy !== sessionId
+    );
+
+    if (activeLock) {
+      return { success: false, message: 'Spot Temporarily Reserved by another terminal.' };
+    }
+
+    const newLock: SpotLock = {
+      classId,
+      spotNumber,
+      lockedAt: now.toISOString(),
+      lockedBy: sessionId,
     };
+
+    const nextLocks = [
+      ...currentLocks.filter(l => !(l.classId === classId && l.spotNumber === spotNumber)),
+      newLock
+    ];
+
+    setSpotLocks(nextLocks);
+    saveToStorage('evolve_spot_locks', nextLocks);
+    sendMessage('SPOT_LOCKED', newLock);
+    return { success: true, message: 'Spot locked successfully.' };
+  }, [sessionId, sendMessage]);
+
+  const unlockSpot = useCallback((classId: string, spotNumber: number) => {
+    setSpotLocks(prev => {
+      const next = prev.filter(
+        l => !(l.classId === classId && l.spotNumber === spotNumber && l.lockedBy === sessionId)
+      );
+      saveToStorage('evolve_spot_locks', next);
+      return next;
+    });
+    sendMessage('SPOT_UNLOCKED', { classId, spotNumber });
+  }, [sessionId, sendMessage]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // CUSTOMER MANAGEMENT
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const addOrUpdateCustomer = useCallback((
+    customerData: {
+      id?: string;
+      name: string;
+      email: string;
+      phone?: string;
+      credits: number;
+      membershipTier: string;
+      emergencyContactName?: string;
+      emergencyContactPhone?: string;
+      emergencyContactRelation?: string;
+      medicalNotes?: string;
+      birthday?: string;
+      gender?: string;
+      address?: string;
+      referralSource?: string;
+      communicationConsent?: boolean;
+    }
+  ): Customer => {
+    const existing = customerData.id
+      ? customers.find(c => c.id === customerData.id)
+      : customers.find(c => c.email.toLowerCase() === customerData.email.toLowerCase());
+
+    let resultCustomer: Customer;
+
+    if (existing) {
+      resultCustomer = {
+        ...existing,
+        name: customerData.name,
+        email: customerData.email,
+        phone: customerData.phone,
+        credits: customerData.credits,
+        membershipTier: customerData.membershipTier,
+        emergencyContactName: customerData.emergencyContactName,
+        emergencyContactPhone: customerData.emergencyContactPhone,
+        emergencyContactRelation: customerData.emergencyContactRelation,
+        medicalNotes: customerData.medicalNotes,
+        birthday: customerData.birthday,
+        gender: customerData.gender,
+        address: customerData.address,
+        referralSource: customerData.referralSource,
+        communicationConsent: customerData.communicationConsent,
+      };
+      setCustomers(prev => prev.map(c => c.id === resultCustomer.id ? resultCustomer : c));
+    } else {
+      resultCustomer = {
+        id: customerData.id || `cust-${Date.now()}`,
+        name: customerData.name,
+        email: customerData.email,
+        phone: customerData.phone,
+        credits: customerData.credits,
+        membershipTier: customerData.membershipTier || 'None',
+        streak: 0,
+        totalClassesAttended: 0,
+        emergencyContactName: customerData.emergencyContactName || '',
+        emergencyContactPhone: customerData.emergencyContactPhone || '',
+        emergencyContactRelation: customerData.emergencyContactRelation || '',
+        medicalNotes: customerData.medicalNotes || '',
+        birthday: customerData.birthday || '',
+        gender: customerData.gender || '',
+        address: customerData.address || '',
+        referralSource: customerData.referralSource || '',
+        communicationConsent: customerData.communicationConsent !== undefined ? customerData.communicationConsent : false,
+      };
+      setCustomers(prev => [...prev, resultCustomer]);
+    }
+
+    sendMessage('CUSTOMER_UPDATED', resultCustomer);
+    return resultCustomer;
+  }, [customers, sendMessage]);
+
+  const buyCreditsForCustomer = useCallback((customerId: string, packType: PackType) => {
+    const pack = CREDIT_PACKS[packType];
+    setCustomers(prev => prev.map(c => {
+      if (c.id !== customerId) return c;
+      return {
+        ...c,
+        credits: packType === 'unlimited' ? 999 : c.credits + pack.credits,
+        membershipTier:
+          packType === 'unlimited'
+            ? 'Unlimited Gold'
+            : c.membershipTier === 'None'
+            ? `${pack.credits}-Class Pack`
+            : c.membershipTier,
+      };
+    }));
   }, []);
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // BOOK SPOT
+  // ─────────────────────────────────────────────────────────────────────────
+
   const bookSpot = useCallback((
-    classId: string,
-    spotNumber: number,
-    method: 'credit' | 'card' | 'cash',
-    customerName: string,
+    classId:       string,
+    spotNumber:    number,
+    method:        'credit' | 'card' | 'cash',
+    customerName:  string,
     customerEmail: string,
     customerPhone?: string,
-    promoCode?: string
+    promoCode?:    string
   ): { success: boolean; message: string; booking?: Booking } => {
     const cls = classes.find(c => c.id === classId);
     if (!cls) return { success: false, message: 'Class not found.' };
-    if (cls.bookedSpots.includes(spotNumber)) return { success: false, message: 'This spot was just taken. Please select another.' };
-
-    let discount = 0;
-    let finalPrice = cls.price;
-    if (promoCode?.toUpperCase() === 'EVOLVE10') {
-      discount = cls.price * 0.1;
-      finalPrice = cls.price - discount;
+    if (cls.bookedSpots.includes(spotNumber)) {
+      return { success: false, message: 'This spot was just taken. Please select another.' };
     }
 
-    // Find or register customer
-    let targetCustomer = customers.find(c => c.email.toLowerCase() === customerEmail.toLowerCase());
-    
+    // ── Promo code discount ───────────────────────────────────────────────
+    let finalPrice = cls.price;
+    const appliedPromo = promoCode?.toUpperCase() === 'EVOLVE10' ? 'EVOLVE10' : undefined;
+    if (appliedPromo) {
+      finalPrice = cls.price * 0.9; // 10% off
+    }
+    const subtotal  = finalPrice;
+    const taxAmount = Math.round(subtotal * 0.08 * 100) / 100;
+    const total     = Math.round((subtotal + taxAmount) * 100) / 100;
+
+    // ── Find or register customer ─────────────────────────────────────────
+    let targetCustomer = customers.find(
+      c => c.email.toLowerCase() === customerEmail.toLowerCase()
+    );
     if (!targetCustomer) {
-      // Create new customer on the fly
       targetCustomer = addOrUpdateCustomer({
         name: customerName,
         email: customerEmail,
         phone: customerPhone,
         credits: 0,
-        membershipTier: 'None'
+        membershipTier: 'None',
       });
     }
 
+    // ── Credit validation ─────────────────────────────────────────────────
     if (method === 'credit') {
       if (targetCustomer.credits < 1) {
-        return { success: false, message: `Customer ${customerName} does not have enough class credits.` };
+        return {
+          success: false,
+          message: `${customerName} does not have enough class credits.`,
+        };
       }
-      // Deduct credit
-      setCustomers(prev => prev.map(c => 
-        c.email.toLowerCase() === customerEmail.toLowerCase() ? { ...c, credits: c.credits - 1 } : c
+      setCustomers(prev => prev.map(c =>
+        c.email.toLowerCase() === customerEmail.toLowerCase()
+          ? { ...c, credits: c.credits - 1 }
+          : c
       ));
     }
 
+    // ── Create booking ────────────────────────────────────────────────────
     const newBooking: Booking = {
-      id: `booking-${Date.now()}`,
+      id:             `booking-${Date.now()}`,
       classId,
       spotNumber,
-      bookedAt: new Date().toISOString(),
-      paymentMethod: method,
-      amountPaid: method === 'credit' ? 0 : finalPrice,
-      status: 'upcoming',
+      bookedAt:       new Date().toISOString(),
+      paymentMethod:  method,
+      amountPaid:     method === 'credit' ? 0 : total,
+      status:         'upcoming',
       customerName,
       customerEmail,
       customerPhone,
+      discountCode:   appliedPromo,
     };
 
     setBookings(prev => [...prev, newBooking]);
     setClasses(prev => prev.map(c =>
-      c.id === classId ? { ...c, bookedSpots: [...c.bookedSpots, spotNumber] } : c
+      c.id === classId
+        ? { ...c, bookedSpots: [...c.bookedSpots, spotNumber] }
+        : c
     ));
 
-    // Remove from waitlist if they were on it
-    setWaitlist(prev => prev.filter(w => !(w.classId === classId && w.customerEmail.toLowerCase() === customerEmail.toLowerCase())));
+    const newTx: Transaction = {
+      id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      type: 'booking',
+      timestamp: new Date().toISOString(),
+      customerName,
+      customerEmail,
+      customerPhone,
+      description: `${cls.title} (Spot #${spotNumber})`,
+      paymentMethod: method,
+      amount: method === 'credit' ? 0 : total,
+      status: 'paid',
+      bookingId: newBooking.id,
+    };
+    setTransactions(prev => [newTx, ...prev]);
 
+    // ── Remove from waitlist if present (and release hold) ────────────────
+    setWaitlist(prev => prev.filter(
+      w => !(w.classId === classId && w.customerEmail.toLowerCase() === customerEmail.toLowerCase())
+    ));
+
+    // Release our reservation/lock on successful book
+    unlockSpot(classId, spotNumber);
+
+    sendMessage('BOOKING_CREATED', { booking: newBooking });
     return { success: true, message: 'Spot successfully booked!', booking: newBooking };
-  }, [classes, customers, addOrUpdateCustomer]);
+  }, [classes, customers, addOrUpdateCustomer, unlockSpot, sendMessage]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // CANCEL BOOKING  — 12-Hour Cancellation Matrix Controller
+  // ─────────────────────────────────────────────────────────────────────────
 
   const cancelBooking = useCallback((bookingId: string): { success: boolean; message: string } => {
     const booking = bookings.find(b => b.id === bookingId);
     if (!booking) return { success: false, message: 'Booking not found.' };
+    if (booking.status === 'cancelled') return { success: false, message: 'Booking already cancelled.' };
 
     const cls = classes.find(c => c.id === booking.classId);
-    const bookedAt = new Date(booking.bookedAt);
-    const now = new Date();
-    const hoursAgo = (now.getTime() - bookedAt.getTime()) / (1000 * 60 * 60);
-    const isLate = cls ? new Date(`${cls.date}T${cls.time.includes('PM') ? parseInt(cls.time) + 12 : parseInt(cls.time)}:00:00`) < now : false;
-    const refund = !isLate && hoursAgo < 12 && booking.paymentMethod === 'credit';
 
-    setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled' } : b));
+    // ── Compute delta to class start using proper AM/PM parser ────────────
+    const now = new Date();
+    let hoursUntilClass = Infinity; // default safe value (always refund if class not found)
+
+    if (cls) {
+      const classStart = parseClassDateTime(cls.date, cls.time);
+      const deltaMs    = classStart.getTime() - now.getTime();
+      hoursUntilClass  = deltaMs / (1000 * 60 * 60);
+    }
+
+    // ── 12-hour matrix decision ───────────────────────────────────────────
+    // Early cancellation  (≥ 12 h before class):  refund 1 credit if paid by credit
+    // Late  cancellation  (<  12 h before class):  no refund — studio retains revenue
+    const isEarlyCancel = hoursUntilClass >= 12;
+    const creditRefund  = isEarlyCancel && booking.paymentMethod === 'credit';
+
+    // ── Mutate booking status + strip spot from class ─────────────────────
+    const cancelledAt = new Date().toISOString();
+    setBookings(prev => prev.map(b =>
+      b.id === bookingId ? { ...b, status: 'cancelled', cancelledAt } : b
+    ));
     setClasses(prev => prev.map(c =>
       c.id === booking.classId
         ? { ...c, bookedSpots: c.bookedSpots.filter(s => s !== booking.spotNumber) }
         : c
     ));
+    setTransactions(prev => prev.map(t =>
+      t.bookingId === bookingId ? { ...t, status: 'cancelled' } : t
+    ));
+    sendMessage('BOOKING_CANCELLED', { bookingId, cancelledAt, classId: booking.classId, spotNumber: booking.spotNumber });
 
-    if (refund) {
-      setCustomers(prev => prev.map(c => 
-        c.email.toLowerCase() === booking.customerEmail.toLowerCase() ? { ...c, credits: c.credits + 1 } : c
+    // ── Credit refund (early cancel only) ─────────────────────────────────
+    if (creditRefund) {
+      setCustomers(prev => prev.map(c =>
+        c.email.toLowerCase() === booking.customerEmail.toLowerCase()
+          ? { ...c, credits: c.credits + 1 }
+          : c
       ));
-      return { success: true, message: 'Booking cancelled. 1 credit refunded to customer.' };
     }
 
-    return { success: true, message: isLate ? 'Booking cancelled. No refund for past classes.' : 'Booking cancelled. Late cancellation — no refund.' };
-  }, [bookings, classes]);
+    // ── After a spot opens, auto-promote oldest waitlisted client ─────────
+    // We defer this to a microtask so class state has settled.
+    if (cls) {
+      setTimeout(() => {
+        setWaitlist(prevWl => {
+          const classQueue = prevWl
+            .filter(w => w.classId === booking.classId)
+            .sort((a, b) => a.joinedAt.localeCompare(b.joinedAt));
 
-  const buyCreditsForCustomer = useCallback((customerId: string, packType: PackType) => {
-    const pack = CREDIT_PACKS[packType];
-    setCustomers(prev => prev.map(c => {
-      if (c.id === customerId) {
-        return {
-          ...c,
-          credits: packType === 'unlimited' ? 999 : c.credits + pack.credits,
-          membershipTier: packType === 'unlimited' ? 'Unlimited Gold' : c.membershipTier === 'None' ? `${pack.credits}-Class Pack` : c.membershipTier,
-        };
-      }
-      return c;
-    }));
-  }, []);
+          if (classQueue.length === 0) return prevWl;
 
-  const joinWaitlist = useCallback((classId: string, customerName: string, customerEmail: string, customerPhone?: string) => {
-    setWaitlist(prev => {
-      if (!prev.some(w => w.classId === classId && w.customerEmail.toLowerCase() === customerEmail.toLowerCase())) {
-        return [...prev, { classId, customerName, customerEmail, customerPhone, joinedAt: new Date().toISOString() }];
-      }
-      return prev;
-    });
-  }, []);
+          const nextUp = classQueue[0];
+
+          // Determine payment method — use held credit if hold is active
+          const payMethod: 'credit' | 'cash' = nextUp.holdCredit ? 'credit' : 'cash';
+
+          // If the hold credit was pre-authorized, restore it first so bookSpot can deduct it
+          if (nextUp.holdCredit) {
+            setCustomers(prev => prev.map(c =>
+              c.email.toLowerCase() === nextUp.customerEmail.toLowerCase()
+                ? { ...c, credits: c.credits + 1 }
+                : c
+            ));
+          }
+
+          // Find a free spot
+          setClasses(prevCls => {
+            const targetClass = prevCls.find(c => c.id === booking.classId);
+            if (!targetClass) return prevCls;
+
+            let freeSpot = -1;
+            for (let s = 1; s <= targetClass.totalSpots; s++) {
+              if (!targetClass.bookedSpots.includes(s)) { freeSpot = s; break; }
+            }
+            if (freeSpot === -1) return prevCls;
+
+            // Build the promoted booking
+            const promotedBooking: Booking = {
+              id:            `booking-${Date.now()}`,
+              classId:       booking.classId,
+              spotNumber:    freeSpot,
+              bookedAt:      new Date().toISOString(),
+              paymentMethod: payMethod,
+              amountPaid:    0, // credit or zero — settled in-context
+              status:        'upcoming',
+              customerName:  nextUp.customerName,
+              customerEmail: nextUp.customerEmail,
+              customerPhone: nextUp.customerPhone,
+            };
+
+            // Deduct credit if used
+            if (payMethod === 'credit') {
+              setCustomers(prev => prev.map(c =>
+                c.email.toLowerCase() === nextUp.customerEmail.toLowerCase()
+                  ? { ...c, credits: c.credits - 1 }
+                  : c
+              ));
+            }
+
+            setBookings(prev => [...prev, promotedBooking]);
+            const promotedTx: Transaction = {
+              id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+              type: 'booking',
+              timestamp: new Date().toISOString(),
+              customerName: nextUp.customerName,
+              customerEmail: nextUp.customerEmail,
+              customerPhone: nextUp.customerPhone,
+              description: `${targetClass.title} (Spot #${freeSpot})`,
+              paymentMethod: payMethod,
+              amount: 0,
+              status: 'paid',
+              bookingId: promotedBooking.id,
+            };
+            setTransactions(prev => [promotedTx, ...prev]);
+            sendMessage('BOOKING_CREATED', { booking: promotedBooking });
+
+            return prevCls.map(c =>
+              c.id === booking.classId
+                ? { ...c, bookedSpots: [...c.bookedSpots, freeSpot] }
+                : c
+            );
+          });
+
+          // Remove promoted client from waitlist
+          return prevWl.filter(
+            w => !(w.classId === booking.classId &&
+              w.customerEmail.toLowerCase() === nextUp.customerEmail.toLowerCase())
+          );
+        });
+      }, 0);
+    }
+
+    if (!cls) return { success: true, message: 'Booking cancelled.' };
+    if (creditRefund) return { success: true, message: 'Early cancellation — 1 credit refunded.' };
+    return { success: true, message: 'Late cancellation (<12 h) — no credit refund retained.' };
+  }, [bookings, classes, sendMessage]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // CHECK IN
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const checkInBooking = useCallback((bookingId: string): { success: boolean; message: string } => {
+    const booking = bookings.find(b => b.id === bookingId);
+    if (!booking) return { success: false, message: 'Booking not found.' };
+    if (booking.status === 'cancelled') return { success: false, message: 'Cannot check-in a cancelled booking.' };
+    if (booking.status === 'attended') return { success: false, message: 'Already checked in.' };
+
+    setBookings(prev => prev.map(b =>
+      b.id === bookingId ? { ...b, status: 'attended' } : b
+    ));
+
+    // Increment customer's attended count + streak
+    setCustomers(prev => prev.map(c =>
+      c.email.toLowerCase() === booking.customerEmail.toLowerCase()
+        ? { ...c, totalClassesAttended: c.totalClassesAttended + 1, streak: c.streak + 1 }
+        : c
+    ));
+
+    return { success: true, message: `${booking.customerName} checked in successfully.` };
+  }, [bookings]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // WAITLIST — Join / Leave / Promote / Expire Holds
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const joinWaitlist = useCallback((
+    classId:       string,
+    customerName:  string,
+    customerEmail: string,
+    customerPhone?: string
+  ) => {
+    const alreadyQueued = waitlist.some(
+      w => w.classId === classId && w.customerEmail.toLowerCase() === customerEmail.toLowerCase()
+    );
+    if (alreadyQueued) return;
+
+    // Check if the customer has a credit to pre-authorize (hold)
+    const customer = customers.find(
+      c => c.email.toLowerCase() === customerEmail.toLowerCase()
+    );
+    const hasCredit = customer && customer.credits >= 1;
+
+    // Place a hold — deduct 1 credit from visible balance
+    if (hasCredit && customer) {
+      setCustomers(prevC => prevC.map(c =>
+        c.email.toLowerCase() === customerEmail.toLowerCase()
+          ? { ...c, credits: c.credits - 1 }
+          : c
+      ));
+    }
+
+    setWaitlist(prev => [
+      ...prev,
+      {
+        classId,
+        customerName,
+        customerEmail,
+        customerPhone,
+        joinedAt:    new Date().toISOString(),
+        holdCredit:  !!hasCredit,
+      },
+    ]);
+  }, [customers, waitlist]);
 
   const leaveWaitlist = useCallback((classId: string, customerEmail: string) => {
-    setWaitlist(prev => prev.filter(w => !(w.classId === classId && w.customerEmail.toLowerCase() === customerEmail.toLowerCase())));
-  }, []);
+    const entry = waitlist.find(
+      w => w.classId === classId && w.customerEmail.toLowerCase() === customerEmail.toLowerCase()
+    );
+
+    // Restore held credit when leaving waitlist voluntarily
+    if (entry?.holdCredit) {
+      setCustomers(prevC => prevC.map(c =>
+        c.email.toLowerCase() === customerEmail.toLowerCase()
+          ? { ...c, credits: c.credits + 1 }
+          : c
+      ));
+    }
+
+    setWaitlist(prev => prev.filter(
+      w => !(w.classId === classId && w.customerEmail.toLowerCase() === customerEmail.toLowerCase())
+    ));
+  }, [waitlist]);
+
+  const releaseExpiredHolds = useCallback(() => {
+    const now = new Date();
+
+    const toRelease = waitlist.filter(w => {
+      const cls = classes.find(c => c.id === w.classId);
+      if (!cls || !w.holdCredit) return false;
+      const classStart = parseClassDateTime(cls.date, cls.time);
+      return classStart <= now; // class already started / passed
+    });
+
+    if (toRelease.length === 0) return;
+
+    // Restore credits for each expired hold
+    toRelease.forEach(entry => {
+      setCustomers(prevC => prevC.map(c =>
+        c.email.toLowerCase() === entry.customerEmail.toLowerCase()
+          ? { ...c, credits: c.credits + 1 }
+          : c
+      ));
+    });
+
+    const releasedKeys = new Set(
+      toRelease.map(e => `${e.classId}::${e.customerEmail.toLowerCase()}`)
+    );
+    
+    setWaitlist(prev => prev.filter(
+      w => !releasedKeys.has(`${w.classId}::${w.customerEmail.toLowerCase()}`)
+    ));
+  }, [classes, waitlist]);
+
+  /**
+   * promoteFromWaitlist — manually promote the oldest queued client into an open spot.
+   * Called from BookingTerminal "Promote Client" button.
+   */
+  const promoteFromWaitlist = useCallback((
+    classId:       string,
+    customerEmail: string,
+    method:        'credit' | 'card' | 'cash' = 'cash'
+  ): { success: boolean; message: string; booking?: Booking } => {
+    const cls = classes.find(c => c.id === classId);
+    if (!cls) return { success: false, message: 'Class not found.' };
+
+    let freeSpot = -1;
+    for (let s = 1; s <= cls.totalSpots; s++) {
+      if (!cls.bookedSpots.includes(s)) { freeSpot = s; break; }
+    }
+    if (freeSpot === -1) return { success: false, message: 'No free spots available.' };
+
+    const wlEntry = waitlist.find(
+      w => w.classId === classId && w.customerEmail.toLowerCase() === customerEmail.toLowerCase()
+    );
+    if (!wlEntry) return { success: false, message: 'Client is not on the waitlist.' };
+
+    // If hold credit was pre-authorized, restore it so bookSpot can deduct properly
+    const effectiveMethod = wlEntry.holdCredit ? 'credit' : method;
+    if (wlEntry.holdCredit) {
+      setCustomers(prevC => prevC.map(c =>
+        c.email.toLowerCase() === customerEmail.toLowerCase()
+          ? { ...c, credits: c.credits + 1 }
+          : c
+      ));
+    }
+
+    return bookSpot(
+      classId,
+      freeSpot,
+      effectiveMethod,
+      wlEntry.customerName,
+      wlEntry.customerEmail,
+      wlEntry.customerPhone,
+      undefined
+    );
+  }, [classes, waitlist, bookSpot]);
+
+  const addTransaction = useCallback((txData: Omit<Transaction, 'id' | 'timestamp'> & { id?: string; timestamp?: string }) => {
+    const newTx: Transaction = {
+      id: txData.id || `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      timestamp: txData.timestamp || new Date().toISOString(),
+      type: txData.type,
+      customerName: txData.customerName,
+      customerEmail: txData.customerEmail,
+      customerPhone: txData.customerPhone,
+      description: txData.description,
+      paymentMethod: txData.paymentMethod,
+      amount: txData.amount,
+      status: txData.status,
+      bookingId: txData.bookingId,
+    };
+    setTransactions(prev => {
+      const next = [newTx, ...prev];
+      saveToStorage('evolve_transactions', next);
+      return next;
+    });
+    sendMessage('TRANSACTION_UPDATED', newTx);
+    return newTx;
+  }, [sendMessage]);
+
+  const updateTransactionStatus = useCallback((id: string, status: Transaction['status']) => {
+    setTransactions(prev => {
+      const next = prev.map(t => {
+        if (t.id === id) {
+          const updated = { ...t, status };
+          sendMessage('TRANSACTION_UPDATED', updated);
+          return updated;
+        }
+        return t;
+      });
+      saveToStorage('evolve_transactions', next);
+      return next;
+    });
+  }, [sendMessage]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <BookingContext.Provider value={{
-      user, customers, classes, bookings, waitlist,
-      updateUser, bookSpot, cancelBooking, buyCreditsForCustomer,
-      addOrUpdateCustomer, getClassById, getBookingForSpot,
+      user, customers, classes, bookings, waitlist, spotLocks, transactions,
+      updateUser,
+      bookSpot, cancelBooking, checkInBooking,
+      buyCreditsForCustomer,
+      addOrUpdateCustomer,
+      getClassById, getBookingForSpot,
       joinWaitlist, leaveWaitlist, isOnWaitlist,
+      promoteFromWaitlist, releaseExpiredHolds,
+      lockSpot, unlockSpot,
+      addTransaction, updateTransactionStatus,
     }}>
       {children}
     </BookingContext.Provider>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HOOK
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function useBooking() {
   const ctx = useContext(BookingContext);

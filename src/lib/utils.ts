@@ -27,3 +27,17 @@ export function getAvailableSpots(cls: { totalSpots: number; bookedSpots: number
 export function isClassFull(cls: { totalSpots: number; bookedSpots: number[] }): boolean {
   return cls.bookedSpots.length >= cls.totalSpots;
 }
+
+export function parseClassDateTime(dateStr: string, timeStr: string): Date {
+  // timeStr examples: "7:00 AM", "12:00 PM", "5:30 PM"
+  const [timePart, modifier] = timeStr.trim().split(' ');
+  let [hours, minutes] = timePart.split(':').map(Number);
+
+  if (modifier === 'PM' && hours !== 12) hours += 12;
+  if (modifier === 'AM' && hours === 12) hours = 0;
+
+  const paddedH = String(hours).padStart(2, '0');
+  const paddedM = String(minutes).padStart(2, '0');
+  return new Date(`${dateStr}T${paddedH}:${paddedM}:00`);
+}
+

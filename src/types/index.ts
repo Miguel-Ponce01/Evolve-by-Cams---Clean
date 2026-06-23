@@ -18,9 +18,9 @@ export interface FitnessClass {
   title: string;
   type: ClassType;
   instructor: Instructor;
-  date: string; // ISO date string
-  time: string; // "7:00 AM"
-  duration: number; // minutes
+  date: string;       // ISO date string  YYYY-MM-DD
+  time: string;       // "7:00 AM"
+  duration: number;   // minutes
   totalSpots: number;
   bookedSpots: number[];
   price: number;
@@ -33,13 +33,29 @@ export interface Booking {
   id: string;
   classId: string;
   spotNumber: number;
-  bookedAt: string;
+  bookedAt: string;                               // ISO timestamp
   paymentMethod: 'credit' | 'card' | 'cash';
   amountPaid: number;
   status: 'upcoming' | 'attended' | 'cancelled';
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
+  discountCode?: string;                          // e.g. 'EVOLVE10'
+  cancelledAt?: string;                           // ISO timestamp – set on cancellation
+}
+
+export interface Transaction {
+  id: string;
+  type: 'booking' | 'membership';
+  timestamp: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  description: string;
+  paymentMethod: 'cash' | 'card' | 'credit';
+  amount: number;
+  status: 'paid' | 'pending' | 'cancelled';
+  bookingId?: string;
 }
 
 export interface User {
@@ -63,6 +79,15 @@ export interface Customer {
   membershipTier: string;
   streak: number;
   totalClassesAttended: number;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  emergencyContactRelation?: string;
+  medicalNotes?: string;
+  birthday?: string;
+  gender?: string;
+  address?: string;
+  referralSource?: string;
+  communicationConsent?: boolean;
 }
 
 export interface WaitlistEntry {
@@ -70,7 +95,15 @@ export interface WaitlistEntry {
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
-  joinedAt: string;
+  joinedAt: string;           // ISO timestamp
+  holdCredit: boolean;        // true = 1 credit is pre-authorized (on hold)
+}
+
+export interface SpotLock {
+  classId: string;
+  spotNumber: number;
+  lockedAt: string;           // ISO timestamp
+  lockedBy: string;           // sessionId of locking terminal
 }
 
 export type PackType = 'single' | 'five' | 'ten' | 'unlimited';
@@ -82,4 +115,20 @@ export interface CreditPack {
   price: number;
   perClass: string;
   popular?: boolean;
+}
+
+/**
+ * Computed daily analytics snapshot — never persisted, always derived.
+ */
+export interface DailyStats {
+  occupancyRate: number;        // 0-100 percentage
+  totalBookings: number;        // non-cancelled bookings booked today
+  activeCustomers: number;      // total customer records
+  revenue: {
+    cash: number;
+    card: number;
+    total: number;
+  };
+  creditsRedeemed: number;      // credit-method bookings today
+  cancellations: number;        // cancellations logged today
 }

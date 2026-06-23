@@ -1,10 +1,9 @@
 import BookingTerminalPage from './BookingTerminal';
+import { SEED_CLASSES } from '@/lib/seedData';
 
 export async function generateStaticParams() {
-  return [{ classId: 'session' }];
+  return SEED_CLASSES.map(cls => ({ classId: cls.id }));
 }
-
-export const dynamicParams = false;
 
 export default function Page() {
   return <BookingTerminalPage />;

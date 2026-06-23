@@ -15,14 +15,14 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export function Navbar() {
+export default function Navbar() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const navItems = [
-    { name: 'Console', path: '/', icon: Calendar },
-    { name: 'Clients', path: '/profile', icon: Users },
+    { name: 'Scheduler', path: '/', icon: Calendar },
+    { name: 'Customers', path: '/profile', icon: Users },
     { name: 'Ledger', path: '/wallet', icon: Wallet },
     { name: 'Packages', path: '/memberships', icon: CreditCard },
     { name: 'Coaches', path: '/instructors', icon: UserCheck },
@@ -40,11 +40,11 @@ export function Navbar() {
   return (
     <>
       {/* ── DESKTOP NAVIGATION BAR (TOP-BAR) ── */}
-      <header className="hidden lg:flex w-full sticky top-0 z-40 bg-card/90 backdrop-blur-md border-b border-border transition-all">
+      <header className="hidden lg:flex w-full sticky top-0 z-40 bg-card/90 backdrop-blur-md border-b border-border transition-colors">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between max-w-[1240px]">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-2.5 cursor-pointer">
-            <span className="text-xl font-black font-display tracking-widest text-primary uppercase">EVOLVE</span>
+            <span className="text-2xl font-black font-display tracking-widest text-primary uppercase">EVOLVE</span>
             <span className="text-[10px] uppercase font-mono font-bold text-muted-foreground border border-border px-1.5 py-0.5 rounded-sm">POS</span>
           </Link>
 
@@ -57,13 +57,13 @@ export function Navbar() {
                   key={item.path}
                   href={item.path}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-pill text-xs font-bold uppercase tracking-wider transition-all cursor-pointer",
+                    "flex items-center gap-2 px-4 py-2 rounded-pill text-sm font-bold uppercase tracking-wider transition-all cursor-pointer",
                     isActive 
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
                   )}
                 >
-                  <item.icon size={14} />
+                  <item.icon size={15} />
                   <span>{item.name}</span>
                 </Link>
               );

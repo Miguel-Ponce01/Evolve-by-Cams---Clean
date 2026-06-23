@@ -3,34 +3,38 @@
 @import "tw-animate-css";
 
 @theme {
-  --color-primary: #4a154b;
-  --color-primary-deep: #481a54;
-  --color-primary-press: #611f69;
-  --color-primary-tint: #592466;
-  --color-on-primary: #ffffff;
-  --color-ink: #1d1d1d;
-  --color-ink-mute: #696969;
+  --color-primary: var(--primary);
+  --color-primary-deep: var(--primary);
+  --color-primary-press: var(--primary);
+  --color-primary-tint: var(--primary);
+  --color-on-primary: var(--primary-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-ink: var(--foreground);
+  --color-ink-mute: var(--foreground);
   --color-link-blue: #1264a3;
   --color-link-hover: #3860be;
   
-  --color-background: #ffffff;
-  --color-foreground: #1d1d1d;
-  --color-card: #ffffff;
-  --color-card-foreground: #1d1d1d;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #1d1d1d;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--card);
+  --color-popover-foreground: var(--foreground);
   
-  --color-canvas-cream: #f4ede4;
-  --color-canvas-lavender: #f9f0ff;
-  --color-surface-aubergine: #4a154b;
-  --color-hairline: #e6e6e6;
-  --color-hairline-strong: #000000;
-  --color-on-aubergine-mute: #d9bdde;
+  --color-canvas-cream: var(--secondary);
+  --color-canvas-lavender: var(--secondary);
+  --color-surface-aubergine: var(--primary);
+  --color-hairline: var(--border);
+  --color-hairline-strong: var(--foreground);
+  --color-on-aubergine-mute: var(--primary-foreground);
   
   --color-destructive: #cc4117;
-  --color-border: #e6e6e6;
-  --color-input: #ffffff;
-  --color-ring: #4a154b;
+  --color-border: var(--border);
+  --color-input: var(--background);
+  --color-ring: var(--primary);
 
   --radius-xs: 2px;
   --radius-sm: 4px;
@@ -64,6 +68,82 @@
   --input: #ffffff;
   --ring: #4a154b;
   --radius: 12px;
+  --bg-image: radial-gradient(at 10% 20%, #fff0e6 0px, transparent 40%),
+              radial-gradient(at 90% 10%, #f9f0ff 0px, transparent 45%),
+              radial-gradient(at 50% 80%, #edf7e7 0px, transparent 50%);
+}
+
+/* --- THEME DEFINITIONS --- */
+.theme-aesthetic {
+  --primary: #4a154b;
+  --primary-foreground: #ffffff;
+  --background: #ffffff;
+  --foreground: #1d1d1d;
+  --card: #ffffff;
+  --secondary: #f9f0ff;
+  --secondary-foreground: #4a154b;
+  --muted: #f9f0ff;
+  --muted-foreground: #705872;
+  --accent: #f4ede4;
+  --accent-foreground: #4a154b;
+  --border: #e6e6e6;
+  --radius: 12px;
+  --bg-image: radial-gradient(at 10% 20%, #fff0e6 0px, transparent 40%),
+              radial-gradient(at 90% 10%, #f9f0ff 0px, transparent 45%),
+              radial-gradient(at 50% 80%, #edf7e7 0px, transparent 50%);
+}
+
+.theme-neutral {
+  --primary: #0f172a;
+  --primary-foreground: #ffffff;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #e2e8f0;
+  --muted-foreground: #475569;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --border: #cbd5e1;
+  --radius: 6px;
+  --bg-image: none;
+}
+
+.theme-pastel {
+  --primary: #6d28d9;
+  --primary-foreground: #ffffff;
+  --background: #faf5ff;
+  --foreground: #1e1b4b;
+  --card: #ffffff;
+  --secondary: #f3e8ff;
+  --secondary-foreground: #6d28d9;
+  --muted: #fae8ff;
+  --muted-foreground: #7c3aed;
+  --accent: #fae8ff;
+  --accent-foreground: #6d28d9;
+  --border: #e9d5ff;
+  --radius: 16px;
+  --bg-image: radial-gradient(at 15% 15%, #e0f2fe 0px, transparent 45%),
+              radial-gradient(at 85% 15%, #f3e8ff 0px, transparent 45%),
+              radial-gradient(at 50% 85%, #dcfce7 0px, transparent 50%);
+}
+
+.theme-minimalist {
+  --primary: #000000;
+  --primary-foreground: #ffffff;
+  --background: #ffffff;
+  --foreground: #000000;
+  --card: #ffffff;
+  --secondary: #f3f4f6;
+  --secondary-foreground: #000000;
+  --muted: #e5e7eb;
+  --muted-foreground: #6b7280;
+  --accent: #e5e7eb;
+  --accent-foreground: #000000;
+  --border: #000000;
+  --radius: 0px;
+  --bg-image: none;
 }
 
 @layer base {
@@ -74,13 +154,9 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
-    background-color: #ffffff;
-    background-image: 
-      radial-gradient(at 10% 20%, #fff0e6 0px, transparent 40%),
-      radial-gradient(at 90% 10%, #f9f0ff 0px, transparent 45%),
-      radial-gradient(at 50% 80%, #edf7e7 0px, transparent 50%);
+    background-image: var(--bg-image);
     background-attachment: fixed;
-    color: #1d1d1d;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   }
 }
 

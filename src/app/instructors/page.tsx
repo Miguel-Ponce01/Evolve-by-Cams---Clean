@@ -15,24 +15,27 @@ export default function InstructorsPage() {
   };
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6">
-      <div className="flex items-center gap-3 mb-2">
+    <div className="container mx-auto px-4 py-6 max-w-5xl">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
         <Link href="/" className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors">
           <ArrowLeft size={16} />
         </Link>
-        <h1 className="font-bold text-xl">Our Coaches</h1>
+        <div>
+          <span className="text-xs uppercase font-mono tracking-widest text-primary font-bold">POS Coaches & Team</span>
+          <h1 className="text-3xl font-heading font-black tracking-wide uppercase">Our Coaches Roster</h1>
+        </div>
       </div>
-      <p className="text-sm text-muted-foreground mb-6 ml-12">Meet the team behind the sweat.</p>
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {INSTRUCTORS.map((instructor, i) => (
           <div
             key={instructor.id}
-            className="rounded-2xl bg-card border border-border overflow-hidden animate-slide-up"
+            className="flex flex-col bg-white border border-border rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all h-full animate-slide-up"
             style={{ animationDelay: `${i * 0.1}s` }}
           >
             {/* Header Band */}
-            <div className="relative h-24 overflow-hidden"
+            <div className="relative h-28 overflow-hidden flex items-center justify-center"
               style={{
                 background: i === 0
                   ? 'linear-gradient(135deg, #7C3AED, #F59E0B)'
@@ -41,62 +44,85 @@ export default function InstructorsPage() {
                   : 'linear-gradient(135deg, #EF4444, #EC4899)',
               }}
             >
-              <div className="absolute inset-0 flex items-center justify-center text-6xl opacity-60">
-                {instructor.avatar}
-              </div>
-              <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-sm text-white text-xs">
-                <Star size={10} className="fill-amber-400 text-amber-400" />
-                {instructor.rating}
+              <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px]" />
+              <span className="text-6xl z-10 filter drop-shadow-md select-none">{instructor.avatar}</span>
+              <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/45 backdrop-blur-sm text-white text-xs font-bold font-mono">
+                <Star size={11} className="fill-amber-400 text-amber-400" />
+                {instructor.rating.toFixed(2)}
               </div>
             </div>
 
-            {/* Body */}
-            <div className="p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h2 className="font-bold text-base">{instructor.name}</h2>
-                  <p className="text-xs text-primary">{instructor.specialty}</p>
+            {/* Body Content */}
+            <div className="flex-1 p-5 flex flex-col justify-between bg-card text-card-foreground">
+              <div className="space-y-3 flex-1 flex flex-col">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h2 className="font-heading font-black text-lg text-foreground uppercase tracking-wide">{instructor.name}</h2>
+                    <span className="text-xs font-mono font-bold text-primary">{instructor.specialty}</span>
+                  </div>
+                  <a
+                    href={`https://instagram.com/${instructor.instagram.replace('@', '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-primary font-bold text-[10px] hover:bg-primary hover:text-on-primary transition-all shadow-sm shrink-0"
+                  >
+                    <Instagram size={11} /> {instructor.instagram}
+                  </a>
                 </div>
-                <a
-                  href={`https://instagram.com/${instructor.instagram.replace('@', '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-pink-500/20 hover:text-pink-400 transition-colors"
-                >
-                  <Instagram size={14} />
-                </a>
-              </div>
 
-              <p className="text-sm text-muted-foreground mb-3 leading-relaxed">{instructor.bio}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed flex-1">{instructor.bio}</p>
 
-              {/* Stats */}
-              <div className="flex items-center gap-4 mb-3">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Users size={12} />
-                  <span>{instructor.totalStudents.toLocaleString()} students</span>
+                {/* Rating stars & Students count row */}
+                <div className="flex items-center justify-between border-t border-b border-border/45 py-3 my-2">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground">Coach Rating</span>
+                    <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5 text-amber-400">
+                        {[...Array(5)].map((_, index) => {
+                          const ratingFloor = Math.floor(instructor.rating);
+                          const isFilled = index < ratingFloor;
+                          return (
+                            <Star key={index} size={10} className={isFilled ? "fill-amber-400 text-amber-400" : "text-border"} />
+                          );
+                        })}
+                      </div>
+                      <span className="text-[10px] font-bold font-mono">{instructor.rating}</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground block">Active Students</span>
+                    <span className="text-[11px] font-black text-foreground font-mono">{instructor.totalStudents.toLocaleString()}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span>📅</span>
-                  <span>{getInstructorClasses(instructor.name)} classes this week</span>
-                </div>
-              </div>
 
-              {/* Music Badge */}
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-secondary border border-border mb-3">
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                  <Music size={12} className="text-emerald-400" />
+                {/* Stats & Schedule */}
+                <div className="grid grid-cols-2 gap-2 text-muted-foreground border-b border-border/45 pb-3 mb-2">
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                    <Users size={12} className="text-primary" />
+                    <span>{instructor.totalStudents.toLocaleString()} total</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                    <span>📅</span>
+                    <span>{getInstructorClasses(instructor.name)} this week</span>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Playlist Vibe</p>
-                  <p className="text-xs font-semibold">{instructor.musicStyle}</p>
+
+                {/* Custom Playlist Badge */}
+                <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#edf7e7]/30 border border-[#edf7e7]/60 mb-4">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+                    <Music size={14} className="text-emerald-500 animate-pulse" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">Playlist vibe · {instructor.musicStyle}</p>
+                    <p className="text-xs font-bold text-ink truncate">{instructor.playlist}</p>
+                  </div>
                 </div>
-                <div className="ml-auto text-[10px] text-muted-foreground">{instructor.playlist}</div>
               </div>
 
               {/* View Classes CTA */}
               <button
                 onClick={() => router.push(`/?instructor=${instructor.name.split(' ')[0]}`)}
-                className="w-full py-2.5 rounded-pill bg-primary/10 border border-primary/30 text-primary text-sm font-bold flex items-center justify-center gap-1.5 hover:bg-primary hover:text-on-primary transition-all cursor-pointer"
+                className="w-full py-3.5 mt-2 rounded-pill bg-primary text-on-primary text-xs font-bold uppercase tracking-widest hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
               >
                 View {instructor.name.split(' ')[0]}&apos;s Classes <ChevronRight size={14} />
               </button>

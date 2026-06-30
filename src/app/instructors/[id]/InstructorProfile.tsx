@@ -73,13 +73,13 @@ export default function InstructorProfile() {
       </Link>
 
       <div className="rounded-3xl overflow-hidden border border-border shadow-sm mb-6">
-        <div className="relative h-40 flex items-end p-6" style={{ background: GRADIENT_MAP[instructor.id] || GRADIENT_MAP.cams }}>
+        <div className="relative min-h-[180px] py-8 px-6 flex items-center sm:items-end" style={{ background: GRADIENT_MAP[instructor.id] || GRADIENT_MAP.cams }}>
           <div className="absolute inset-0 bg-black/20" />
-          <div className="relative z-10 flex items-end gap-5">
-            <div className="w-24 h-24 rounded-2xl bg-white/20 backdrop-blur-sm border-2 border-white/50 flex items-center justify-center text-6xl shadow-xl">{instructor.avatar}</div>
+          <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-end gap-5 text-center sm:text-left w-full">
+            <div className="w-24 h-24 rounded-2xl bg-white/20 backdrop-blur-sm border-2 border-white/50 flex items-center justify-center text-6xl shadow-xl shrink-0">{instructor.avatar}</div>
             <div className="pb-1">
               <span className="text-white/80 text-[10px] font-mono uppercase tracking-widest font-bold">POS Coaches</span>
-              <h1 className="text-3xl font-heading font-black text-white uppercase tracking-wide drop-shadow">{instructor.name}</h1>
+              <h1 className="text-2xl sm:text-3xl font-heading font-black text-white uppercase tracking-wide drop-shadow">{instructor.name}</h1>
               <p className="text-white/80 text-xs font-bold">{instructor.specialty}</p>
             </div>
           </div>

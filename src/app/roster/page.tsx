@@ -354,7 +354,7 @@ export default function RosterPage() {
               </p>
             </div>
 
-            <div className="bg-white border border-border rounded-3xl overflow-hidden shadow-sm mb-5">
+            <div className="bg-white border border-border rounded-3xl overflow-hidden shadow-sm mb-5 overflow-x-auto">
               {rosterBookings.length === 0 ? (
                 <div className="text-center py-14">
                   <Users size={36} className="mx-auto text-muted-foreground mb-3" />

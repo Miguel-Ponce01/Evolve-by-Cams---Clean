@@ -5,6 +5,8 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { BookingProvider } from "@/context/BookingContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 
+import { ThemeLayoutWrapper } from "@/components/layout/ThemeLayoutWrapper";
+
 export const metadata: Metadata = {
   title: "Evolve by Cams — Fitness & Wellness",
   description: "High-vibe booking platform for modern fitness and wellness.",
@@ -16,9 +18,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="antialiased bg-background text-foreground flex flex-col min-h-screen" suppressHydrationWarning>
         <ThemeProvider>
           <BookingProvider>
-            <Navbar />
-            <main className="flex-1 pb-20 lg:pb-0">{children}</main>
-            <BottomNav />
+            <ThemeLayoutWrapper>
+              <Navbar />
+              <main className="flex-1 pb-20 lg:pb-0">{children}</main>
+              <BottomNav />
+            </ThemeLayoutWrapper>
           </BookingProvider>
         </ThemeProvider>
       </body>

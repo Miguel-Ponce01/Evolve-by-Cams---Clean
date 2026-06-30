@@ -263,3 +263,31 @@ textarea::placeholder {
   color: var(--muted-foreground) !important;
   opacity: 0.85 !important;
 }
+
+/* Dynamic theme overrides to implement light periwinkle/lavender on all pages except client dashboard */
+.theme-aesthetic:not(.dark-mode-override),
+.theme-neutral:not(.dark-mode-override),
+.theme-pastel:not(.dark-mode-override),
+.theme-minimalist:not(.dark-mode-override),
+:root:not(.dark-mode-override) {
+  --background: #ffffff;
+  --foreground: #121212;
+  --card: #ffffff;
+  --card-foreground: #121212;
+  --popover: #ffffff;
+  --popover-foreground: #121212;
+  --primary: #7c8cf2;
+  --primary-foreground: #ffffff;
+  --secondary: #EEF2FF;
+  --secondary-foreground: #121212;
+  --muted: #f3f4f6;
+  --muted-foreground: #4b5563;
+  --accent: #6c7ef0;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --border: #e5e7eb;
+  --input: #ffffff;
+  --ring: #7c8cf2;
+  --bg-image: none;
+}
+

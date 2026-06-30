@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LogOut, ArrowRight, Activity, ShieldAlert, UserCheck } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -55,7 +55,9 @@ export function Navbar() {
       <header 
         className={cn(
           "hidden lg:flex w-full sticky top-0 z-40 transition-all border-b",
-          isAdmin || isClient
+          isAdmin
+            ? "bg-white border-zinc-200 text-black"
+            : isClient
             ? "bg-[#161616] border-[#2a2a2a] text-white"
             : "bg-white border-zinc-200 text-black"
         )}
@@ -65,9 +67,9 @@ export function Navbar() {
           {/* Brand Logo Header */}
           <Link href="/" className="flex items-center gap-1.5 select-none cursor-pointer">
             {isAdmin ? (
-              <span className="text-3xl font-light tracking-[0.25em] font-serif text-white uppercase leading-none">
+              <span className="text-3xl font-light tracking-[0.25em] font-serif text-black uppercase leading-none">
                 EVOLVE
-                <span className="text-red-500 font-mono text-[9px] font-black tracking-widest bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded ml-2 align-middle">
+                <span className="text-[#7c8cf2] font-mono text-[9px] font-black tracking-widest bg-[#7c8cf2]/10 border border-[#7c8cf2]/20 px-2 py-0.5 rounded ml-2 align-middle">
                   STAFF
                 </span>
               </span>
@@ -97,8 +99,8 @@ export function Navbar() {
                     className={cn(
                       "text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
                       isActive 
-                        ? (isAdmin || isClient ? "text-[#FF5E62]" : "text-[#7c8cf2]")
-                        : (isAdmin || isClient ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-black")
+                        ? (isAdmin ? "text-[#7c8cf2]" : isClient ? "text-[#FF5E62]" : "text-[#7c8cf2]")
+                        : (isAdmin ? "text-zinc-550 hover:text-black" : isClient ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-black")
                     )}
                   >
                     {item.name}
@@ -111,7 +113,7 @@ export function Navbar() {
             {isAdmin ? (
               <Link
                 href="/"
-                className="py-3 px-5 rounded-md border border-red-500/30 hover:border-red-500/60 bg-red-950/20 text-red-500 font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1.5"
+                className="py-3 px-5 rounded-md border border-zinc-200 hover:bg-zinc-50 text-zinc-700 font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1.5"
               >
                 <span>Exit Portal</span>
                 <LogOut size={12} />
@@ -147,15 +149,17 @@ export function Navbar() {
       <header 
         className={cn(
           "lg:hidden w-full sticky top-0 z-40 px-4 py-4 flex items-center justify-between transition-colors border-b",
-          isAdmin || isClient
+          isAdmin
+            ? "bg-white border-zinc-200 text-black"
+            : isClient
             ? "bg-[#161616] border-[#2a2a2a] text-white"
             : "bg-white border-zinc-200 text-black"
         )}
       >
         <Link href="/" className="flex items-center select-none cursor-pointer">
           {isAdmin ? (
-            <span className="text-xl font-light tracking-[0.2em] font-serif text-white uppercase leading-none">
-              EVOLVE <span className="text-red-500 font-mono text-[8px] font-bold">STAFF</span>
+            <span className="text-xl font-light tracking-[0.2em] font-serif text-black uppercase leading-none">
+              EVOLVE <span className="text-[#7c8cf2] font-mono text-[8px] font-bold">STAFF</span>
             </span>
           ) : isClient ? (
             <span className="text-xl font-light tracking-[0.2em] font-serif text-white uppercase leading-none">
@@ -171,7 +175,7 @@ export function Navbar() {
         {isAdmin ? (
           <Link
             href="/"
-            className="py-2 px-3 rounded-md bg-red-950/40 border border-red-500/20 text-red-500 font-black text-[9px] uppercase tracking-wider"
+            className="py-2 px-3 rounded-md bg-white border border-zinc-200 text-zinc-700 font-black text-[9px] uppercase tracking-wider"
           >
             Exit
           </Link>
@@ -196,7 +200,9 @@ export function Navbar() {
       <nav 
         className={cn(
           "lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t flex justify-around items-center h-16 px-2 pb-safe transition-colors",
-          isAdmin || isClient
+          isAdmin
+            ? "bg-white border-zinc-200 text-zinc-500"
+            : isClient
             ? "bg-[#161616] border-[#2a2a2a] text-zinc-400"
             : "bg-white border-zinc-200 text-zinc-500"
         )}
@@ -210,8 +216,8 @@ export function Navbar() {
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full gap-1 cursor-pointer transition-all",
                 isActive 
-                  ? (isAdmin || isClient ? "text-[#FF5E62] font-black" : "text-[#7c8cf2] font-black")
-                  : (isAdmin || isClient ? "text-zinc-400 hover:text-white" : "text-zinc-400 hover:text-zinc-800")
+                  ? (isAdmin ? "text-[#7c8cf2] font-black" : isClient ? "text-[#FF5E62] font-black" : "text-[#7c8cf2] font-black")
+                  : (isAdmin ? "text-zinc-500 hover:text-black" : isClient ? "text-zinc-400 hover:text-white" : "text-zinc-400 hover:text-zinc-800")
               )}
             >
               <span className="text-[10px] font-black uppercase tracking-widest leading-none">{item.name}</span>

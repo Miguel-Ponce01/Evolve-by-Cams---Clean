@@ -540,7 +540,7 @@ export default function ScheduleBuilderPage() {
               </div>
 
               {/* Row 3: Date + Time + Duration */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Date *</label>
                   <input
@@ -566,7 +566,7 @@ export default function ScheduleBuilderPage() {
               </div>
 
               {/* Row 4: Spots + Price */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
                     <Users size={11} className="inline mr-1" /> Total Spots (Capacity)

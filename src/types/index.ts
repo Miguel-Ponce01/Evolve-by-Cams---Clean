@@ -56,6 +56,7 @@ export interface Transaction {
   amount: number;
   status: 'paid' | 'pending' | 'cancelled';
   bookingId?: string;
+  handledBy?: string;
 }
 
 export interface User {
@@ -88,6 +89,7 @@ export interface Customer {
   address?: string;
   referralSource?: string;
   communicationConsent?: boolean;
+  tags?: string[];
 }
 
 export interface WaitlistEntry {

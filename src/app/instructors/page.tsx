@@ -1,14 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { INSTRUCTORS } from '@/lib/seedData';
 import { useBooking } from '@/context/BookingContext';
 import { ArrowLeft, Star, Users, Music, ChevronRight, Instagram } from 'lucide-react';
 
 export default function InstructorsPage() {
   const { classes } = useBooking();
-  const router = useRouter();
 
   const getInstructorClasses = (instructorName: string) => {
     return classes.filter(c => c.instructor.name === instructorName).length;
@@ -120,12 +118,12 @@ export default function InstructorsPage() {
               </div>
 
               {/* View Classes CTA */}
-              <button
-                onClick={() => router.push(`/?instructor=${instructor.name.split(' ')[0]}`)}
+              <Link
+                href={`/instructors/${instructor.id}`}
                 className="w-full py-3.5 mt-2 rounded-pill bg-primary text-on-primary text-xs font-bold uppercase tracking-widest hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
               >
-                View {instructor.name.split(' ')[0]}&apos;s Classes <ChevronRight size={14} />
-              </button>
+                View {instructor.name.split(' ')[0]}&apos;s Profile <ChevronRight size={14} />
+              </Link>
             </div>
           </div>
         ))}

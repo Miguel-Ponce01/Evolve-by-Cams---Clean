@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, Fragment } from 'react';
 import Link from 'next/link';
 import { useBooking } from '@/context/BookingContext';
 import { formatDate } from '@/lib/utils';
@@ -109,6 +109,7 @@ export default function SalesLedgerPage() {
   const [methodFilter,  setMethodFilter]  = useState<'all' | 'cash' | 'card' | 'credit'>('all');
   const [dateFilter,    setDateFilter]    = useState<DateFilter>('all');
   const [checkInMsg,    setCheckInMsg]    = useState('');
+  const [expandedTxId,  setExpandedTxId]  = useState<string | null>(null);
 
   // ── Date boundary helpers ────────────────────────────────────────────────
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
@@ -426,78 +427,176 @@ export default function SalesLedgerPage() {
               ) : (
                 filteredTransactions.map(t => {
                   const b = t.bookingId ? bookings.find(x => x.id === t.bookingId) : undefined;
+                  const cls = b ? getClassById(b.classId) : undefined;
                   const cust = customers.find(c => c.email.toLowerCase() === t.customerEmail.toLowerCase());
+                  const isExpanded = expandedTxId === t.id;
                   return (
-                    <tr key={t.id} className="hover:bg-secondary/20 transition-colors">
-                      <td className="p-4">
-                        {b ? (
-                          <Link href={`/book/${b.classId}/success/${b.id}`} className="text-primary font-bold hover:underline">
-                            {t.id.replace('tx-', '#').substring(0, 10)}
-                          </Link>
-                        ) : (
-                          <span className="text-foreground font-bold">{t.id.replace('tx-', '#').substring(0, 10)}</span>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <Badge variant="outline" className={cn("text-[9px] font-bold uppercase tracking-wider",
-                          t.type === 'membership' ? "bg-amber-500/10 text-amber-700 border-amber-500/20" : "bg-primary/10 text-primary border-primary/20"
-                        )}>
-                          {t.type}
-                        </Badge>
-                      </td>
-                      <td className="p-4 font-sans">
-                        <p className="font-bold text-foreground">{t.customerName}</p>
-                        <p className="text-[9px] text-muted-foreground">{t.customerEmail}</p>
-                      </td>
-                      <td className="p-4 text-center">
-                        <span className="inline-flex items-center gap-0.5 text-amber-600 font-bold text-[10px]">
-                          🔥 {cust?.streak ?? 0}
-                        </span>
-                      </td>
-                      <td className="p-4 font-sans text-foreground">
-                        {t.description}
-                      </td>
-                      <td className="p-4 text-center">
-                        {b ? (
-                          <span className="w-6 h-6 rounded-full bg-canvas-lavender border border-primary/20 text-[9px] font-bold text-primary inline-flex items-center justify-center">
-                            {b.spotNumber}
+                    <Fragment key={t.id}>
+                      <tr 
+                        onClick={() => setExpandedTxId(isExpanded ? null : t.id)}
+                        className={cn("hover:bg-secondary/20 transition-colors cursor-pointer", isExpanded && "bg-secondary/35")}
+                      >
+                        <td className="p-4">
+                          {b ? (
+                            <Link 
+                              href={`/book/${b.classId}/success/${b.id}`} 
+                              onClick={e => e.stopPropagation()}
+                              className="text-primary font-bold hover:underline"
+                            >
+                              {t.id.replace('tx-', '#').substring(0, 10)}
+                            </Link>
+                          ) : (
+                            <span className="text-foreground font-bold">{t.id.replace('tx-', '#').substring(0, 10)}</span>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <Badge variant="outline" className={cn("text-[9px] font-bold uppercase tracking-wider",
+                            t.type === 'membership' ? "bg-amber-500/10 text-amber-700 border-amber-500/20" : "bg-primary/10 text-primary border-primary/20"
+                          )}>
+                            {t.type}
+                          </Badge>
+                        </td>
+                        <td className="p-4 font-sans">
+                          <p className="font-bold text-foreground">{t.customerName}</p>
+                          <p className="text-[9px] text-muted-foreground">{t.customerEmail}</p>
+                        </td>
+                        <td className="p-4 text-center">
+                          <span className="inline-flex items-center gap-0.5 text-amber-600 font-bold text-[10px]">
+                            🔥 {cust?.streak ?? 0}
                           </span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="p-4"><MethodBadge method={t.paymentMethod} /></td>
-                      <td className="p-4 text-foreground font-semibold">
-                        {t.paymentMethod === 'credit'
-                          ? <span className="text-amber-500">1 Credit</span>
-                          : <span>₱{t.amount.toFixed(2)}</span>
-                        }
-                      </td>
-                      <td className="p-4 text-muted-foreground text-[10px]">{formatDate(t.timestamp.split('T')[0])}</td>
-                      <td className="p-4">
-                        {t.status === 'cancelled' ? (
-                          <span className="text-red-400 flex items-center gap-1 font-sans font-semibold"><XCircle size={12} /> Cancelled</span>
-                        ) : t.status === 'pending' ? (
-                          <span className="text-amber-500 flex items-center gap-1 font-sans font-semibold"><AlertTriangle size={12} className="animate-pulse" /> Pending</span>
-                        ) : b?.status === 'attended' ? (
-                          <span className="text-emerald-400 flex items-center gap-1 font-sans font-semibold"><CheckCircle2 size={12} /> Attended</span>
-                        ) : (
-                          <span className="text-sky-500 flex items-center gap-1 font-sans font-semibold"><CheckCircle2 size={12} /> Paid</span>
-                        )}
-                      </td>
-                      <td className="p-4 text-center">
-                        {b && b.status === 'upcoming' && t.status === 'paid' ? (
-                          <button
-                            onClick={() => handleCheckIn(b.id)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-[9px] font-black uppercase tracking-wider hover:bg-primary hover:text-white transition-all cursor-pointer"
-                          >
-                            <UserCheck size={10} /> Check In
-                          </button>
-                        ) : (
-                          <span className="text-[9px] text-muted-foreground">—</span>
-                        )}
-                      </td>
-                    </tr>
+                        </td>
+                        <td className="p-4 font-sans text-foreground">
+                          {t.description}
+                        </td>
+                        <td className="p-4 text-center">
+                          {b ? (
+                            <span className="w-6 h-6 rounded-full bg-canvas-lavender border border-primary/20 text-[9px] font-bold text-primary inline-flex items-center justify-center">
+                              {b.spotNumber}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="p-4"><MethodBadge method={t.paymentMethod} /></td>
+                        <td className="p-4 text-foreground font-semibold">
+                          {t.paymentMethod === 'credit'
+                            ? <span className="text-amber-500">1 Credit</span>
+                            : <span>₱{t.amount.toFixed(2)}</span>
+                          }
+                        </td>
+                        <td className="p-4 text-muted-foreground text-[10px]">{formatDate(t.timestamp.split('T')[0])}</td>
+                        <td className="p-4">
+                          {t.status === 'cancelled' ? (
+                            <span className="text-red-400 flex items-center gap-1 font-sans font-semibold"><XCircle size={12} /> Cancelled</span>
+                          ) : t.status === 'pending' ? (
+                            <span className="text-amber-500 flex items-center gap-1 font-sans font-semibold"><AlertTriangle size={12} className="animate-pulse" /> Pending</span>
+                          ) : b?.status === 'attended' ? (
+                            <span className="text-emerald-400 flex items-center gap-1 font-sans font-semibold"><CheckCircle2 size={12} /> Attended</span>
+                          ) : (
+                            <span className="text-sky-500 flex items-center gap-1 font-sans font-semibold"><CheckCircle2 size={12} /> Paid</span>
+                          )}
+                        </td>
+                        <td className="p-4 text-center">
+                          {b && b.status === 'upcoming' && t.status === 'paid' ? (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleCheckIn(b.id); }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-[9px] font-black uppercase tracking-wider hover:bg-primary hover:text-white transition-all cursor-pointer"
+                            >
+                              <UserCheck size={10} /> Check In
+                            </button>
+                          ) : (
+                            <span className="text-[9px] text-muted-foreground">—</span>
+                          )}
+                        </td>
+                      </tr>
+                      {isExpanded && (
+                        <tr className="bg-secondary/10 border-t-0">
+                          <td colSpan={11} className="p-4 pl-6 border-t-0">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-foreground bg-white border border-border rounded-2xl p-5 shadow-sm font-sans" onClick={e => e.stopPropagation()}>
+                              {/* Column 1: Transaction details */}
+                              <div className="space-y-2">
+                                <h4 className="text-[10px] font-mono font-bold uppercase tracking-widest text-primary border-b border-border/40 pb-1">Transaction Details</h4>
+                                <p><span className="font-semibold text-muted-foreground">ID:</span> <span className="font-mono">{t.id}</span></p>
+                                <p><span className="font-semibold text-muted-foreground">Date/Time:</span> {new Date(t.timestamp).toLocaleString()}</p>
+                                <p><span className="font-semibold text-muted-foreground">Type:</span> <span className="capitalize font-medium">{t.type}</span></p>
+                                <p><span className="font-semibold text-muted-foreground">Item:</span> {t.description}</p>
+                                <p><span className="font-semibold text-muted-foreground">Method:</span> <span className="capitalize">{t.paymentMethod}</span></p>
+                                <p><span className="font-semibold text-muted-foreground">Amount:</span> {t.paymentMethod === 'credit' ? '1 Credit' : `₱${t.amount.toFixed(2)}`}</p>
+                                <p><span className="font-semibold text-muted-foreground">Status:</span> <span className={cn("font-bold capitalize", t.status === 'cancelled' ? "text-red-500" : t.status === 'pending' ? "text-amber-500" : "text-emerald-600")}>{t.status}</span></p>
+                              </div>
+
+                              {/* Column 2: Client Profile */}
+                              <div className="space-y-2">
+                                <h4 className="text-[10px] font-mono font-bold uppercase tracking-widest text-primary border-b border-border/40 pb-1">Client Profile</h4>
+                                <p><span className="font-semibold text-muted-foreground">Name:</span> <span className="font-bold text-foreground">{t.customerName}</span></p>
+                                <p><span className="font-semibold text-muted-foreground">Email:</span> {t.customerEmail}</p>
+                                <p><span className="font-semibold text-muted-foreground">Phone:</span> {t.customerPhone || 'N/A'}</p>
+                                {cust && (
+                                  <>
+                                    <p><span className="font-semibold text-muted-foreground">Membership:</span> {cust.membershipTier}</p>
+                                    <p><span className="font-semibold text-muted-foreground">Credits Balance:</span> {cust.credits === 999 ? '∞' : cust.credits}</p>
+                                    <p><span className="font-semibold text-muted-foreground">Workouts:</span> {cust.totalClassesAttended} classes (🔥 {cust.streak} streak)</p>
+                                    {cust.birthday && <p><span className="font-semibold text-muted-foreground">Birthday:</span> 🎂 {cust.birthday}</p>}
+                                    {cust.tags && cust.tags.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-1.5">
+                                        <span className="font-semibold text-muted-foreground mr-1">Tags:</span>
+                                        {cust.tags.map(tag => (
+                                          <span key={tag} className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[8px] font-bold uppercase tracking-wider">{tag}</span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+
+                              {/* Column 3: Booking/Class Info or Safety */}
+                              <div className="space-y-2">
+                                {b && cls ? (
+                                  <>
+                                    <h4 className="text-[10px] font-mono font-bold uppercase tracking-widest text-primary border-b border-border/40 pb-1">Class &amp; Spot details</h4>
+                                    <p><span className="font-semibold text-muted-foreground">Booking ID:</span> <span className="font-mono">{b.id}</span></p>
+                                    <p><span className="font-semibold text-muted-foreground">Class Title:</span> <span className="font-bold">{cls.title}</span></p>
+                                    <p><span className="font-semibold text-muted-foreground">Type/Level:</span> {cls.type} &middot; {cls.level}</p>
+                                    <p><span className="font-semibold text-muted-foreground">Coach:</span> {cls.instructor.avatar} {cls.instructor.name}</p>
+                                    <p><span className="font-semibold text-muted-foreground">Schedule:</span> {formatDate(cls.date)} at {cls.time} ({cls.duration} min)</p>
+                                    <p><span className="font-semibold text-muted-foreground">Spot Securing:</span> <span className="font-bold text-primary font-mono">Spot #{b.spotNumber}</span></p>
+                                    <p><span className="font-semibold text-muted-foreground">Check-in Status:</span> <span className="capitalize font-semibold">{b.status}</span></p>
+                                  </>
+                                ) : (
+                                  <>
+                                    <h4 className="text-[10px] font-mono font-bold uppercase tracking-widest text-primary border-b border-border/40 pb-1">Safety &amp; Safety details</h4>
+                                    {cust && (cust.emergencyContactName || cust.medicalNotes) ? (
+                                      <div className="space-y-2">
+                                        {cust.emergencyContactName && (
+                                          <p>
+                                            <span className="font-semibold text-muted-foreground">Emergency:</span> {cust.emergencyContactName} ({cust.emergencyContactRelation || 'Relation'}) &bull; <span className="font-mono">{cust.emergencyContactPhone}</span>
+                                          </p>
+                                        )}
+                                        {cust.medicalNotes && (
+                                          <div className="mt-1 p-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[10px] leading-normal font-medium flex items-start gap-1">
+                                            <AlertTriangle size={12} className="shrink-0 mt-0.5" />
+                                            <div>
+                                              <p className="font-black uppercase tracking-wider text-[8px] mb-0.5">Medical Safety Notes:</p>
+                                              {cust.medicalNotes}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className="flex flex-col justify-center items-center h-full text-center py-6 text-muted-foreground">
+                                        <span className="text-xl">💳</span>
+                                        <p className="text-[10px] font-bold uppercase mt-1">Membership Transaction</p>
+                                        <p className="text-[9px]">No associated Pilates booking or health alerts.</p>
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   );
                 })
               )}
@@ -512,12 +611,22 @@ export default function SalesLedgerPage() {
           ) : (
             filteredTransactions.map(t => {
               const b = t.bookingId ? bookings.find(x => x.id === t.bookingId) : undefined;
+              const cls = b ? getClassById(b.classId) : undefined;
               const cust = customers.find(c => c.email.toLowerCase() === t.customerEmail.toLowerCase());
+              const isExpanded = expandedTxId === t.id;
               return (
-                <div key={t.id} className="p-4 space-y-2.5 text-xs font-mono">
+                <div 
+                  key={t.id} 
+                  onClick={() => setExpandedTxId(isExpanded ? null : t.id)}
+                  className={cn("p-4 space-y-2.5 text-xs font-mono cursor-pointer hover:bg-secondary/40 transition-colors", isExpanded && "bg-secondary/20")}
+                >
                   <div className="flex justify-between items-center">
                     {b ? (
-                      <Link href={`/book/${b.classId}/success/${b.id}`} className="text-primary font-bold text-sm hover:underline">
+                      <Link 
+                        href={`/book/${b.classId}/success/${b.id}`} 
+                        onClick={e => e.stopPropagation()}
+                        className="text-primary font-bold text-sm hover:underline"
+                      >
                         {t.id.replace('tx-', '#').substring(0, 10)}
                       </Link>
                     ) : (
@@ -555,13 +664,77 @@ export default function SalesLedgerPage() {
                         {t.paymentMethod === 'credit' ? '1 Credit' : `₱${t.amount.toFixed(2)}`}
                       </span>
                       {b && b.status === 'upcoming' && t.status === 'paid' && (
-                        <button onClick={() => handleCheckIn(b.id)}
+                        <button onClick={(e) => { e.stopPropagation(); handleCheckIn(b.id); }}
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-[8px] font-black uppercase cursor-pointer">
                           <UserCheck size={9} /> Check In
                         </button>
                       )}
                     </div>
                   </div>
+
+                  {/* Collapsible Mobile details panel */}
+                  {isExpanded && (
+                    <div className="pt-3 border-t border-border/40 space-y-4 font-sans text-xs text-foreground animate-slide-up" onClick={e => e.stopPropagation()}>
+                      {/* Section 1: Transaction details */}
+                      <div className="space-y-1.5 bg-secondary/30 p-3 rounded-xl border border-border/40">
+                        <p className="text-[9px] font-mono font-bold uppercase tracking-widest text-primary">Transaction Info</p>
+                        <p><span className="font-semibold text-muted-foreground">ID:</span> <span className="font-mono text-[10px]">{t.id}</span></p>
+                        <p><span className="font-semibold text-muted-foreground">Timestamp:</span> {new Date(t.timestamp).toLocaleString()}</p>
+                        <p><span className="font-semibold text-muted-foreground">Description:</span> {t.description}</p>
+                        <p><span className="font-semibold text-muted-foreground">Payment Status:</span> <span className="capitalize font-bold text-primary">{t.status}</span></p>
+                      </div>
+
+                      {/* Section 2: Client Profile */}
+                      <div className="space-y-1.5 bg-secondary/30 p-3 rounded-xl border border-border/40">
+                        <p className="text-[9px] font-mono font-bold uppercase tracking-widest text-primary">Client Profile</p>
+                        <p><span className="font-semibold text-muted-foreground">Name:</span> <span className="font-bold">{t.customerName}</span></p>
+                        <p><span className="font-semibold text-muted-foreground">Email:</span> {t.customerEmail}</p>
+                        <p><span className="font-semibold text-muted-foreground">Phone:</span> {t.customerPhone || 'N/A'}</p>
+                        {cust && (
+                          <>
+                            <p><span className="font-semibold text-muted-foreground">Membership:</span> {cust.membershipTier}</p>
+                            <p><span className="font-semibold text-muted-foreground">Credits Balance:</span> {cust.credits === 999 ? '∞' : cust.credits}</p>
+                            {cust.birthday && <p><span className="font-semibold text-muted-foreground">Birthday:</span> 🎂 {cust.birthday}</p>}
+                            {cust.tags && cust.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {cust.tags.map(tag => (
+                                  <span key={tag} className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[8px] font-bold uppercase tracking-wider">{tag}</span>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Section 3: Booking/Safety Profile */}
+                      {b && cls ? (
+                        <div className="space-y-1.5 bg-secondary/30 p-3 rounded-xl border border-border/40">
+                          <p className="text-[9px] font-mono font-bold uppercase tracking-widest text-primary">Class &amp; Spot Details</p>
+                          <p><span className="font-semibold text-muted-foreground">Class Title:</span> <span className="font-bold text-foreground">{cls.title}</span></p>
+                          <p><span className="font-semibold text-muted-foreground">Instructor:</span> {cls.instructor.avatar} {cls.instructor.name}</p>
+                          <p><span className="font-semibold text-muted-foreground">Date/Time:</span> {formatDate(cls.date)} at {cls.time}</p>
+                          <p><span className="font-semibold text-muted-foreground">Spot Securing:</span> <span className="font-bold text-primary">Spot #{b.spotNumber}</span></p>
+                          <p><span className="font-semibold text-muted-foreground">Booking Status:</span> <span className="capitalize">{b.status}</span></p>
+                        </div>
+                      ) : cust && (cust.emergencyContactName || cust.medicalNotes) ? (
+                        <div className="space-y-1.5 bg-secondary/30 p-3 rounded-xl border border-border/40">
+                          <p className="text-[9px] font-mono font-bold uppercase tracking-widest text-primary">Safety &amp; Emergency</p>
+                          {cust.emergencyContactName && (
+                            <p><span className="font-semibold text-muted-foreground">Emergency Contact:</span> {cust.emergencyContactName} ({cust.emergencyContactRelation || 'Relation'}) &bull; <span className="font-mono">{cust.emergencyContactPhone}</span></p>
+                          )}
+                          {cust.medicalNotes && (
+                            <div className="mt-1 p-2 rounded bg-red-50 border border-red-200 text-red-700 text-[10px] leading-normal font-medium flex items-start gap-1">
+                              <AlertTriangle size={12} className="shrink-0 mt-0.5" />
+                              <div>
+                                <p className="font-bold uppercase tracking-wider text-[8px] mb-0.5">Safety/Medical Notes:</p>
+                                {cust.medicalNotes}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
               );
             })

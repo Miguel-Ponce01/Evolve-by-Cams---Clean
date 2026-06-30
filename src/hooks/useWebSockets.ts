@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 
 export interface SocketMessage {
-  type: 'SPOT_LOCKED' | 'SPOT_UNLOCKED' | 'BOOKING_CREATED' | 'BOOKING_CANCELLED' | 'CUSTOMER_UPDATED' | 'TRANSACTION_UPDATED';
+  type: 'SPOT_LOCKED' | 'SPOT_UNLOCKED' | 'BOOKING_CREATED' | 'BOOKING_CANCELLED' | 'CUSTOMER_UPDATED' | 'TRANSACTION_UPDATED' | 'CLASS_UPDATED' | 'CLASS_DELETED';
   payload: any;
   senderId: string;
 }

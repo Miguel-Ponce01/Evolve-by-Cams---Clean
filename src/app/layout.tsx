@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { AICopilotDrawer } from "@/components/layout/AICopilotDrawer";
 import { BookingProvider } from "@/context/BookingContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 
@@ -20,7 +19,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Navbar />
             <main className="flex-1 pb-20 lg:pb-0">{children}</main>
             <BottomNav />
-            <AICopilotDrawer />
           </BookingProvider>
         </ThemeProvider>
       </body>

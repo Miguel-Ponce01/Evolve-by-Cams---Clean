@@ -75,6 +75,7 @@ export default function PackageSalesPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [isProcessingCard, setIsProcessingCard] = useState(false);
   const [terminalStateMsg, setTerminalStateMsg] = useState('');
+  const [selectedStaff, setSelectedStaff] = useState('Cams Rivera');
 
   const filteredCustomers = useMemo(() => {
     if (!searchQuery) return [];
@@ -118,6 +119,7 @@ export default function PackageSalesPage() {
         paymentMethod: 'card',
         amount: selectedPack.price,
         status: 'pending',
+        handledBy: selectedStaff,
       });
 
       setIsProcessingCard(true);
@@ -183,6 +185,7 @@ export default function PackageSalesPage() {
         paymentMethod: 'cash',
         amount: selectedPack.price,
         status: 'paid',
+        handledBy: selectedStaff,
       });
       setToastMsg(`✓ Sold ${selectedPack.title} to ${client.name} for ₱${selectedPack.price.toFixed(2)} (CASH)`);
     }
@@ -586,6 +589,28 @@ export default function PackageSalesPage() {
                   >
                     <CreditCard size={13} /> Card Reader
                   </button>
+                </div>
+              </div>
+
+              {/* Staff Selector */}
+              <div className="space-y-2">
+                <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Assisting Staff / Coach</label>
+                <div className="grid grid-cols-2 gap-2 bg-secondary/20 p-1.5 rounded-2xl border border-border/40">
+                  {['Cams Rivera', 'Sarah Lee', 'Alex Tran', 'Evolve Staff'].map(staff => (
+                    <button
+                      key={staff}
+                      type="button"
+                      onClick={() => setSelectedStaff(staff)}
+                      className={cn(
+                        "py-1.5 px-1 text-[9px] font-mono font-bold rounded-xl border text-center transition-all cursor-pointer",
+                        selectedStaff === staff
+                          ? "bg-primary text-white border-primary shadow-xs"
+                          : "bg-white border-border text-muted-foreground hover:bg-secondary/40"
+                      )}
+                    >
+                      {staff === 'Cams Rivera' ? '👑 Cams' : staff === 'Sarah Lee' ? '👟 Sarah' : staff === 'Alex Tran' ? '👟 Alex' : '🧑‍💻 Staff'}
+                    </button>
+                  ))}
                 </div>
               </div>
 

@@ -26,11 +26,22 @@ import {
   Activity,
   Coins,
   Receipt,
-  Printer
+  Printer,
+  Download,
+  Tag,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { CustomSelect } from '@/components/ui/custom-select';
 import type { Transaction } from '@/types';
+
+// ── Birthday today check ──────────────────────────────────────────────────
+function isBirthdayToday(birthday?: string): boolean {
+  if (!birthday) return false;
+  const today = new Date();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return birthday.slice(5) === `${mm}-${dd}`; // compare MM-DD
+}
 
 const genderOptions = [
   { value: '', label: 'Not Specified' },
@@ -100,6 +111,35 @@ export default function CustomerDirectoryPage() {
 
   const [toastMsg, setToastMsg] = useState('');
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+
+  // Tags input state (edit + register)
+  const [regTags, setRegTags] = useState<string[]>([]);
+  const [regTagInput, setRegTagInput] = useState('');
+  const [editTags, setEditTags] = useState<string[]>([]);
+  const [editTagInput, setEditTagInput] = useState('');
+  const [selectedStaff, setSelectedStaff] = useState('Cams Rivera');
+
+  // ── CSV Export ─────────────────────────────────────────────────────────
+  const handleExportCSV = () => {
+    const headers = ['Name', 'Email', 'Phone', 'Membership Tier', 'Credits', 'Classes Attended', 'Tags'];
+    const rows = filteredCustomers.map(c => [
+      `"${c.name}"`,
+      `"${c.email}"`,
+      `"${c.phone || ''}"`,
+      `"${c.membershipTier}"`,
+      c.credits === 999 ? '"Unlimited"' : `"${c.credits}"`,
+      `"${c.totalClassesAttended}"`,
+      `"${(c.tags || []).join('; ')}"`,
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `evolve-clients-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Administrative override / billing action states
   const [showTopUpModal, setShowTopUpModal] = useState(false);
@@ -172,6 +212,7 @@ export default function CustomerDirectoryPage() {
       paymentMethod: topUpPaymentMethod as 'cash' | 'card' | 'credit',
       amount: topUpAmountPaid,
       status: 'paid',
+      handledBy: selectedStaff,
     });
     
     setToastMsg(`✓ Successfully topped up ${topUpCredits} credits for ${activeCustomer.name}`);
@@ -214,6 +255,7 @@ export default function CustomerDirectoryPage() {
       paymentMethod: tierPaymentMethod as 'cash' | 'card' | 'credit',
       amount: tierAmountPaid,
       status: 'paid',
+      handledBy: selectedStaff,
     });
     
     setToastMsg(`✓ Membership tier updated to ${selectedNewTier} for ${activeCustomer.name}`);
@@ -244,6 +286,7 @@ export default function CustomerDirectoryPage() {
       paymentMethod: 'cash',
       amount: 0,
       status: 'cancelled',
+      handledBy: selectedStaff,
     });
     
     setToastMsg(`✓ Cancelled membership for ${activeCustomer.name}`);
@@ -324,6 +367,8 @@ export default function CustomerDirectoryPage() {
       setEditAddress(c.address || '');
       setEditReferralSource(c.referralSource || '');
       setEditCommunicationConsent(c.communicationConsent || false);
+      setEditTags(c.tags || []);
+      setEditTagInput('');
     }
   };
 
@@ -348,6 +393,7 @@ export default function CustomerDirectoryPage() {
       address: regAddress,
       referralSource: regReferralSource,
       communicationConsent: regCommunicationConsent,
+      tags: regTags,
     });
     setToastMsg(`✓ Successfully registered customer: ${newCust.name}`);
     
@@ -366,6 +412,8 @@ export default function CustomerDirectoryPage() {
     setRegAddress('');
     setRegReferralSource('');
     setRegCommunicationConsent(false);
+    setRegTags([]);
+    setRegTagInput('');
     setShowRegForm(false);
     
     // Select the newly created customer
@@ -394,6 +442,7 @@ export default function CustomerDirectoryPage() {
       address: editAddress,
       referralSource: editReferralSource,
       communicationConsent: editCommunicationConsent,
+      tags: editTags,
     });
     setToastMsg('✓ Customer profile updated successfully.');
     setEditMode(false);
@@ -452,6 +501,16 @@ export default function CustomerDirectoryPage() {
             </button>
           </div>
 
+          {/* CSV Export button */}
+          <div className="flex justify-end">
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary border border-border text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary hover:border-primary/40 rounded-pill transition-all cursor-pointer"
+            >
+              <Download size={11} /> Export CSV
+            </button>
+          </div>
+
           {/* Scrollable list of active clients */}
           <div className="bg-card border border-border rounded-3xl divide-y divide-border/60 max-h-[550px] overflow-y-auto shadow-sm bg-white">
             {filteredCustomers.length === 0 ? (
@@ -462,18 +521,31 @@ export default function CustomerDirectoryPage() {
             ) : (
               filteredCustomers.map(c => {
                 const isSelected = c.id === selectedCustId;
+                const isBirthday = isBirthdayToday(c.birthday);
                 return (
                   <button
                     key={c.id}
                     onClick={() => handleSelectCustomer(c.id)}
-                    className={`w-full text-left p-4 flex justify-between items-center transition-colors cursor-pointer ${
-                      isSelected ? 'bg-primary/10 border-l-4 border-l-primary' : 'hover:bg-secondary/40'
-                    }`}
+                    className={cn(
+                      'w-full text-left p-4 flex justify-between items-center transition-colors cursor-pointer',
+                      isSelected ? 'bg-primary/10 border-l-4 border-l-primary' : 'hover:bg-secondary/40',
+                      isBirthday && !isSelected ? 'bg-pink-50/60 border-l-4 border-l-pink-400' : ''
+                    )}
                   >
-                    <div>
-                      <p className="font-bold text-foreground">{c.name}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-bold text-foreground">{c.name}</p>
+                        {isBirthday && <span title="Birthday today!">🎂</span>}
+                      </div>
                       <p className="text-xs text-muted-foreground">{c.email}</p>
                       {c.phone && <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{c.phone}</p>}
+                      {(c.tags || []).length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {(c.tags || []).slice(0, 3).map(tag => (
+                            <span key={tag} className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[8px] font-bold uppercase tracking-wider">{tag}</span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="text-right">
                       <Badge variant="outline" className={`font-mono text-xs font-black ${
@@ -685,6 +757,36 @@ export default function CustomerDirectoryPage() {
                           </label>
                         </div>
                       </div>
+
+                      {/* Client Tags */}
+                      <div className="space-y-1.5 pt-2">
+                        <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                          <Tag size={10} /> Client Tags
+                        </label>
+                        <div className="flex flex-wrap gap-1.5 min-h-[32px] p-2 bg-secondary border border-border rounded-lg">
+                          {editTags.map(tag => (
+                            <span key={tag} className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-bold uppercase tracking-wider">
+                              {tag}
+                              <button type="button" onClick={() => setEditTags(editTags.filter(t => t !== tag))} className="hover:text-destructive cursor-pointer"><X size={8}/></button>
+                            </span>
+                          ))}
+                          <input
+                            type="text"
+                            value={editTagInput}
+                            onChange={e => setEditTagInput(e.target.value)}
+                            onKeyDown={e => {
+                              if ((e.key === 'Enter' || e.key === ',') && editTagInput.trim()) {
+                                e.preventDefault();
+                                const tag = editTagInput.trim().replace(/,$/, '');
+                                if (tag && !editTags.includes(tag)) setEditTags([...editTags, tag]);
+                                setEditTagInput('');
+                              }
+                            }}
+                            placeholder={editTags.length === 0 ? 'Type tag + Enter (e.g. VIP, Comp, Trial)' : 'Add more...'}
+                            className="flex-1 min-w-[120px] bg-transparent text-[10px] focus:outline-none text-foreground placeholder:text-muted-foreground/60"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -701,10 +803,16 @@ export default function CustomerDirectoryPage() {
                         <h3 className="text-xl font-bold text-foreground">{activeCustomer.name}</h3>
                         <p className="text-sm text-muted-foreground">{activeCustomer.email} {activeCustomer.phone ? `· ${activeCustomer.phone}` : ''}</p>
                         
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
                           <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wide border-primary/20 text-primary bg-primary/5">
                             Tier: {activeCustomer.membershipTier}
                           </Badge>
+                          {isBirthdayToday(activeCustomer.birthday) && (
+                            <span className="text-[10px] font-bold text-pink-600 flex items-center gap-1">🎂 Birthday Today!</span>
+                          )}
+                          {(activeCustomer.tags || []).map(tag => (
+                            <span key={tag} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-bold uppercase tracking-wider">{tag}</span>
+                          ))}
                         </div>
                       </div>
                       <button
@@ -1455,6 +1563,28 @@ export default function CustomerDirectoryPage() {
                 />
               </div>
 
+              {/* Staff Selector */}
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Assisting Staff / Coach</label>
+                <div className="grid grid-cols-4 gap-2 bg-secondary/20 p-1.5 rounded-2xl border border-border/40">
+                  {['Cams Rivera', 'Sarah Lee', 'Alex Tran', 'Evolve Staff'].map(staff => (
+                    <button
+                      key={staff}
+                      type="button"
+                      onClick={() => setSelectedStaff(staff)}
+                      className={cn(
+                        "py-1.5 px-1 text-[9px] font-mono font-bold rounded-xl border text-center transition-all cursor-pointer",
+                        selectedStaff === staff
+                          ? "bg-primary text-white border-primary shadow-xs"
+                          : "bg-white border-border text-muted-foreground hover:bg-secondary/40"
+                      )}
+                    >
+                      {staff === 'Cams Rivera' ? '👑 Cams' : staff === 'Sarah Lee' ? '👟 Sarah' : staff === 'Alex Tran' ? '👟 Alex' : '🧑‍💻 Staff'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-3 text-[11px] text-amber-800 leading-normal font-medium mt-1">
                 ⚠️ Top-up overrides require collecting the specified amount from the client and will log a transaction for auditing.
               </div>
@@ -1579,6 +1709,28 @@ export default function CustomerDirectoryPage() {
                 </div>
               </div>
 
+              {/* Staff Selector */}
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Assisting Staff / Coach</label>
+                <div className="grid grid-cols-4 gap-2 bg-secondary/20 p-1.5 rounded-2xl border border-border/40">
+                  {['Cams Rivera', 'Sarah Lee', 'Alex Tran', 'Evolve Staff'].map(staff => (
+                    <button
+                      key={staff}
+                      type="button"
+                      onClick={() => setSelectedStaff(staff)}
+                      className={cn(
+                        "py-1.5 px-1 text-[9px] font-mono font-bold rounded-xl border text-center transition-all cursor-pointer",
+                        selectedStaff === staff
+                          ? "bg-primary text-white border-primary shadow-xs"
+                          : "bg-white border-border text-muted-foreground hover:bg-secondary/40"
+                      )}
+                    >
+                      {staff === 'Cams Rivera' ? '👑 Cams' : staff === 'Sarah Lee' ? '👟 Sarah' : staff === 'Alex Tran' ? '👟 Alex' : '🧑‍💻 Staff'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4 border-t border-border/40 shrink-0">
                 <button
@@ -1636,6 +1788,28 @@ export default function CustomerDirectoryPage() {
                   <li>If the client has <span className="font-black">Unlimited Gold (∞)</span> credits, they will be reset to <span className="font-black">0</span>.</li>
                   <li>Log a cancellation audit entry in the Evolve Local Registry.</li>
                 </ul>
+              </div>
+
+              {/* Staff Selector */}
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Assisting Staff / Coach</label>
+                <div className="grid grid-cols-4 gap-2 bg-secondary/20 p-1.5 rounded-2xl border border-border/40">
+                  {['Cams Rivera', 'Sarah Lee', 'Alex Tran', 'Evolve Staff'].map(staff => (
+                    <button
+                      key={staff}
+                      type="button"
+                      onClick={() => setSelectedStaff(staff)}
+                      className={cn(
+                        "py-1.5 px-1 text-[9px] font-mono font-bold rounded-xl border text-center transition-all cursor-pointer",
+                        selectedStaff === staff
+                          ? "bg-primary text-white border-primary shadow-xs"
+                          : "bg-white border-border text-muted-foreground hover:bg-secondary/40"
+                      )}
+                    >
+                      {staff === 'Cams Rivera' ? '👑 Cams' : staff === 'Sarah Lee' ? '👟 Sarah' : staff === 'Alex Tran' ? '👟 Alex' : '🧑‍💻 Staff'}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Action Buttons */}
@@ -1731,9 +1905,13 @@ export default function CustomerDirectoryPage() {
                     <span className="font-bold text-foreground capitalize">{selectedTransaction.paymentMethod}</span>
                   </div>
                   <div>
+                    <span className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider">Assisted By</span>
+                    <span className="font-bold text-foreground">{selectedTransaction.handledBy || 'Cams Rivera'}</span>
+                  </div>
+                  <div className="col-span-2">
                     <span className="block text-[9px] text-muted-foreground font-bold uppercase tracking-wider">Payment Status</span>
                     <span className={cn(
-                      "badge font-bold px-2 py-0.5 rounded-full text-[9px]",
+                      "badge font-bold px-2 py-0.5 rounded-full text-[9px] inline-block mt-0.5",
                       selectedTransaction.status === 'paid' && "badge-paid",
                       selectedTransaction.status === 'pending' && "badge-pending",
                       selectedTransaction.status === 'cancelled' && "badge-cancelled"

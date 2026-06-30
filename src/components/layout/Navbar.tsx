@@ -1,159 +1,206 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTheme, Theme } from '@/context/ThemeContext';
-import { 
-  Calendar, 
-  Users, 
-  Wallet, 
-  CreditCard, 
-  UserCheck, 
-  Palette, 
-  ChevronDown 
-} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { LogOut, ArrowRight, Activity, ShieldAlert, UserCheck } from 'lucide-react';
 
 export function Navbar() {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const navItems = [
-    { name: 'Console', path: '/', icon: Calendar },
-    { name: 'Clients', path: '/profile', icon: Users },
-    { name: 'Ledger', path: '/wallet', icon: Wallet },
-    { name: 'Packages', path: '/memberships', icon: CreditCard },
-    { name: 'Coaches', path: '/instructors', icon: UserCheck },
-  ];
+  // Determine current routing scope
+  const isAdmin = pathname.startsWith('/portal') || 
+                  pathname.startsWith('/roster') || 
+                  pathname.startsWith('/schedule') || 
+                  pathname.startsWith('/analytics') || 
+                  pathname.startsWith('/instructors');
 
-  const themes: { id: Theme; label: string; icon: string }[] = [
-    { id: 'aesthetic', label: 'Evolve Classic (Aesthetic)', icon: '🔮' },
-    { id: 'neutral', label: 'Slate Console (Neutral)', icon: '💻' },
-    { id: 'pastel', label: 'Spring Bloom (Pastel)', icon: '🌸' },
-    { id: 'minimalist', label: 'Pure Flat (Minimalist)', icon: '🏁' },
-  ];
+  const isClient = pathname.startsWith('/dashboard') || 
+                   pathname.startsWith('/wallet') || 
+                   pathname.startsWith('/profile') || 
+                   pathname.startsWith('/memberships');
 
-  const activeTheme = themes.find(t => t.id === theme) || themes[0];
+  // Define nav links based on layout mode
+  const getNavItems = () => {
+    if (isAdmin) {
+      return [
+        { name: 'Console', path: '/portal' },
+        { name: 'Roster', path: '/roster' },
+        { name: 'Schedule', path: '/schedule' },
+        { name: 'Analytics', path: '/analytics' },
+        { name: 'Coaches', path: '/instructors' },
+      ];
+    }
+    if (isClient) {
+      return [
+        { name: 'Dashboard', path: '/dashboard' },
+        { name: 'Wallet', path: '/wallet' },
+        { name: 'Profile', path: '/profile' },
+        { name: 'Memberships', path: '/memberships' },
+      ];
+    }
+    // Public layout items
+    return [
+      { name: 'Home', path: '/' },
+      { name: 'About', path: '/about' },
+    ];
+  };
+
+  const navItems = getNavItems();
 
   return (
     <>
       {/* ── DESKTOP NAVIGATION BAR (TOP-BAR) ── */}
-      <header className="hidden lg:flex w-full sticky top-0 z-40 bg-card/90 backdrop-blur-md border-b border-border transition-all">
-        <div className="container mx-auto px-6 h-16 flex items-center justify-between max-w-[1240px]">
-          {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-2.5 cursor-pointer">
-            <span className="text-xl font-black font-display tracking-widest text-primary uppercase">EVOLVE</span>
-            <span className="text-[10px] uppercase font-mono font-bold text-muted-foreground border border-border px-1.5 py-0.5 rounded-sm">POS</span>
+      <header 
+        className={cn(
+          "hidden lg:flex w-full sticky top-0 z-40 transition-all border-b",
+          isAdmin || isClient
+            ? "bg-[#161616] border-[#2a2a2a] text-white"
+            : "bg-white border-zinc-200 text-black"
+        )}
+      >
+        <div className="container mx-auto px-6 h-24 flex items-center justify-between max-w-[1240px]">
+          
+          {/* Brand Logo Header */}
+          <Link href="/" className="flex items-center gap-1.5 select-none cursor-pointer">
+            {isAdmin ? (
+              <span className="text-3xl font-light tracking-[0.25em] font-serif text-white uppercase leading-none">
+                EVOLVE
+                <span className="text-red-500 font-mono text-[9px] font-black tracking-widest bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded ml-2 align-middle">
+                  STAFF
+                </span>
+              </span>
+            ) : isClient ? (
+              <span className="text-3xl font-light tracking-[0.25em] font-serif text-white uppercase leading-none">
+                EVOLVE
+                <span className="text-[#FF9966] font-mono text-[9px] font-black tracking-widest bg-[#FF9966]/10 border border-[#FF9966]/20 px-2 py-0.5 rounded ml-2 align-middle">
+                  CLIENT
+                </span>
+              </span>
+            ) : (
+              <span className="text-3xl font-light tracking-[0.25em] font-serif text-black uppercase leading-none transition-colors hover:text-[#7c8cf2]">
+                EVOLVE
+              </span>
+            )}
           </Link>
 
-          {/* Navigation Links */}
-          <nav className="flex items-center space-x-1.5 h-full">
-            {navItems.map(item => {
-              const isActive = pathname === item.path;
-              return (
+          {/* Navigation Links and CTA */}
+          <div className="flex items-center gap-8 h-full">
+            <nav className="flex items-center space-x-8 h-full">
+              {navItems.map(item => {
+                const isActive = pathname === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    className={cn(
+                      "text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
+                      isActive 
+                        ? (isAdmin || isClient ? "text-[#FF5E62]" : "text-[#7c8cf2]")
+                        : (isAdmin || isClient ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-black")
+                    )}
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Action CTA Button depending on scope */}
+            {isAdmin ? (
+              <Link
+                href="/"
+                className="py-3 px-5 rounded-md border border-red-500/30 hover:border-red-500/60 bg-red-950/20 text-red-500 font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1.5"
+              >
+                <span>Exit Portal</span>
+                <LogOut size={12} />
+              </Link>
+            ) : isClient ? (
+              <Link
+                href="/book"
+                className="py-3 px-6 rounded-md bg-gradient-to-r from-[#FF5E62] to-[#FF9966] text-white font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-sm shadow-[#FF5E62]/10 hover:brightness-110"
+              >
+                Book Session
+              </Link>
+            ) : (
+              <div className="flex items-center gap-4">
                 <Link
-                  key={item.path}
-                  href={item.path}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-pill text-xs font-bold uppercase tracking-wider transition-all cursor-pointer",
-                    isActive 
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-                  )}
+                  href="/portal"
+                  className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-black transition-colors"
                 >
-                  <item.icon size={14} />
-                  <span>{item.name}</span>
+                  Staff Portal
                 </Link>
-              );
-            })}
-          </nav>
-
-          {/* Theme Dropdown Widget */}
-          <div className="relative">
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2.5 px-4 py-2 border border-border bg-card hover:bg-secondary/50 rounded-pill text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
-            >
-              <Palette size={14} className="text-primary" />
-              <span>{activeTheme.label.split(' (')[0]}</span>
-              <ChevronDown size={12} className={cn("transition-transform duration-200", dropdownOpen && "rotate-180")} />
-            </button>
-
-            {dropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
-                <div className="absolute right-0 mt-1.5 w-60 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden divide-y divide-border/60 animate-in fade-in slide-in-from-top-1 duration-150">
-                  {themes.map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => {
-                        setTheme(t.id);
-                        setDropdownOpen(false);
-                      }}
-                      className={cn(
-                        "w-full text-left px-4 py-3 text-xs font-bold uppercase tracking-wider flex items-center justify-between hover:bg-secondary/40 cursor-pointer transition-colors",
-                        theme === t.id ? "text-primary bg-primary/5" : "text-muted-foreground"
-                      )}
-                    >
-                      <span className="flex items-center gap-2.5">
-                        <span>{t.icon}</span>
-                        <span>{t.label}</span>
-                      </span>
-                      {theme === t.id && <span className="text-primary text-[10px]">✓</span>}
-                    </button>
-                  ))}
-                </div>
-              </>
+                <Link
+                  href="/book"
+                  className="py-3 px-6 rounded-md bg-[#7c8cf2] hover:bg-[#6c7ef0] text-white font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-sm shadow-[#7c8cf2]/10"
+                >
+                  Reserve Your Spot
+                </Link>
+              </div>
             )}
           </div>
         </div>
       </header>
 
-      {/* ── TABLET/MOBILE HEADER (TOP TITLE + THEME TOGGLE ONLY) ── */}
-      <header className="lg:hidden w-full sticky top-0 z-40 bg-card/95 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between transition-colors">
-        <Link href="/" className="flex items-center gap-1.5">
-          <span className="text-lg font-black font-display tracking-widest text-primary uppercase">EVOLVE</span>
+      {/* ── TABLET/MOBILE HEADER ── */}
+      <header 
+        className={cn(
+          "lg:hidden w-full sticky top-0 z-40 px-4 py-4 flex items-center justify-between transition-colors border-b",
+          isAdmin || isClient
+            ? "bg-[#161616] border-[#2a2a2a] text-white"
+            : "bg-white border-zinc-200 text-black"
+        )}
+      >
+        <Link href="/" className="flex items-center select-none cursor-pointer">
+          {isAdmin ? (
+            <span className="text-xl font-light tracking-[0.2em] font-serif text-white uppercase leading-none">
+              EVOLVE <span className="text-red-500 font-mono text-[8px] font-bold">STAFF</span>
+            </span>
+          ) : isClient ? (
+            <span className="text-xl font-light tracking-[0.2em] font-serif text-white uppercase leading-none">
+              EVOLVE <span className="text-[#FF9966] font-mono text-[8px] font-bold">CLIENT</span>
+            </span>
+          ) : (
+            <span className="text-xl font-light tracking-[0.2em] font-serif text-black uppercase leading-none">
+              EVOLVE
+            </span>
+          )}
         </Link>
 
-        {/* Compact Theme Trigger */}
-        <div className="relative">
-          <button
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center cursor-pointer"
+        {isAdmin ? (
+          <Link
+            href="/"
+            className="py-2 px-3 rounded-md bg-red-950/40 border border-red-500/20 text-red-500 font-black text-[9px] uppercase tracking-wider"
           >
-            <Palette size={14} className="text-primary" />
-          </button>
-
-          {dropdownOpen && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
-              <div className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden divide-y divide-border/60">
-                {themes.map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => {
-                      setTheme(t.id);
-                      setDropdownOpen(false);
-                    }}
-                    className={cn(
-                      "w-full text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-secondary/40 cursor-pointer",
-                      theme === t.id ? "text-primary bg-primary/5" : "text-muted-foreground"
-                    )}
-                  >
-                    <span>{t.icon}</span>
-                    <span>{t.label.split(' (')[0]}</span>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+            Exit
+          </Link>
+        ) : isClient ? (
+          <Link
+            href="/book"
+            className="py-2 px-3.5 rounded-md bg-gradient-to-r from-[#FF5E62] to-[#FF9966] text-white font-black text-[10px] uppercase tracking-wider"
+          >
+            Book
+          </Link>
+        ) : (
+          <Link
+            href="/book"
+            className="py-2 px-3.5 rounded-md bg-[#7c8cf2] text-white font-black text-[10px] uppercase tracking-wider"
+          >
+            Reserve
+          </Link>
+        )}
       </header>
 
       {/* ── TABLET/MOBILE FOOTER TAB NAVIGATION BAR ── */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 border-t border-border flex justify-around items-center h-16 px-2 pb-safe transition-colors">
+      <nav 
+        className={cn(
+          "lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t flex justify-around items-center h-16 px-2 pb-safe transition-colors",
+          isAdmin || isClient
+            ? "bg-[#161616] border-[#2a2a2a] text-zinc-400"
+            : "bg-white border-zinc-200 text-zinc-500"
+        )}
+      >
         {navItems.map(item => {
           const isActive = pathname === item.path;
           return (
@@ -163,17 +210,11 @@ export function Navbar() {
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full gap-1 cursor-pointer transition-all",
                 isActive 
-                  ? "text-primary font-black"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? (isAdmin || isClient ? "text-[#FF5E62] font-black" : "text-[#7c8cf2] font-black")
+                  : (isAdmin || isClient ? "text-zinc-400 hover:text-white" : "text-zinc-400 hover:text-zinc-800")
               )}
             >
-              <div className={cn(
-                "p-1.5 rounded-full transition-all",
-                isActive && "bg-primary/10"
-              )}>
-                <item.icon size={18} className={isActive ? "text-primary" : "text-muted-foreground"} />
-              </div>
-              <span className="text-[9px] font-bold uppercase tracking-widest leading-none">{item.name}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest leading-none">{item.name}</span>
             </Link>
           );
         })}

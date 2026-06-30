@@ -27,7 +27,8 @@ interface BookingContextType {
     customerName: string,
     customerEmail: string,
     customerPhone?: string,
-    promoCode?: string
+    promoCode?: string,
+    handledBy?: string
   ) => { success: boolean; message: string; booking?: Booking };
 
   cancelBooking: (bookingId: string) => { success: boolean; message: string };
@@ -53,6 +54,7 @@ interface BookingContextType {
       address?: string;
       referralSource?: string;
       communicationConsent?: boolean;
+      tags?: string[];
     }
   ) => Customer;
 
@@ -76,6 +78,9 @@ interface BookingContextType {
   transactions: Transaction[];
   addTransaction: (tx: Omit<Transaction, 'id' | 'timestamp'> & { id?: string; timestamp?: string }) => Transaction;
   updateTransactionStatus: (id: string, status: Transaction['status']) => void;
+  addClass: (classData: Omit<FitnessClass, 'id' | 'bookedSpots'>) => FitnessClass;
+  updateClass: (classId: string, updates: Partial<Omit<FitnessClass, 'id' | 'bookedSpots'>>) => void;
+  deleteClass: (classId: string) => { success: boolean; message: string };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -305,6 +310,23 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
           return next;
         });
         break;
+      case 'CLASS_UPDATED':
+        setClasses(prev => {
+          const exists = prev.some(c => c.id === msg.payload.id);
+          const next = exists
+            ? prev.map(c => c.id === msg.payload.id ? msg.payload : c)
+            : [...prev, msg.payload];
+          saveToStorage('evolve_classes', next);
+          return next;
+        });
+        break;
+      case 'CLASS_DELETED':
+        setClasses(prev => {
+          const next = prev.filter(c => c.id !== msg.payload.classId);
+          saveToStorage('evolve_classes', next);
+          return next;
+        });
+        break;
     }
   }, []));
 
@@ -320,34 +342,55 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     const savedLocks     = loadFromStorage<SpotLock[]>('evolve_spot_locks', []);
     let savedTransactions = loadFromStorage<Transaction[]>('evolve_transactions', []);
 
-    // Auto-generate transaction logs from bookings if transactions are empty
-    if (savedTransactions.length === 0 && savedBookings.length > 0) {
-      savedTransactions = savedBookings.map(b => {
-        const cls = savedClasses.find(c => c.id === b.classId);
-        return {
-          id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-          type: 'booking',
-          timestamp: b.bookedAt,
-          customerName: b.customerName,
-          customerEmail: b.customerEmail,
-          customerPhone: b.customerPhone,
-          description: cls ? `${cls.title} (Spot #${b.spotNumber})` : `Class Booking (Spot #${b.spotNumber})`,
-          paymentMethod: b.paymentMethod,
-          amount: b.amountPaid,
-          status: b.status === 'cancelled' ? 'cancelled' : 'paid',
-          bookingId: b.id,
-        };
-      });
-      saveToStorage('evolve_transactions', savedTransactions);
+    // Check if classes are outdated (e.g. they contain dates in the past)
+    const todayStr = new Date().toISOString().split('T')[0];
+    const hasOutdatedClasses = savedClasses.length === 0 || savedClasses.some(c => c.date < todayStr);
+
+    let activeClasses = savedClasses;
+    let activeBookings = savedBookings;
+    let activeWaitlist = savedWaitlist;
+    let activeTransactions = savedTransactions;
+
+    if (hasOutdatedClasses) {
+      activeClasses = SEED_CLASSES;
+      activeBookings = [];
+      activeWaitlist = [];
+      activeTransactions = [];
+      saveToStorage('evolve_classes', SEED_CLASSES);
+      saveToStorage('evolve_bookings', []);
+      saveToStorage('evolve_waitlist', []);
+      saveToStorage('evolve_transactions', []);
+    } else {
+      // Auto-generate transaction logs from bookings if transactions are empty
+      if (savedTransactions.length === 0 && savedBookings.length > 0) {
+        savedTransactions = savedBookings.map(b => {
+          const cls = savedClasses.find(c => c.id === b.classId);
+          return {
+            id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            type: 'booking',
+            timestamp: b.bookedAt,
+            customerName: b.customerName,
+            customerEmail: b.customerEmail,
+            customerPhone: b.customerPhone,
+            description: cls ? `${cls.title} (Spot #${b.spotNumber})` : `Class Booking (Spot #${b.spotNumber})`,
+            paymentMethod: b.paymentMethod,
+            amount: b.amountPaid,
+            status: b.status === 'cancelled' ? 'cancelled' : 'paid',
+            bookingId: b.id,
+          };
+        });
+        saveToStorage('evolve_transactions', savedTransactions);
+        activeTransactions = savedTransactions;
+      }
     }
 
     setUser(savedAdmin);
     setCustomers(savedCustomers);
-    setBookings(savedBookings);
-    setWaitlist(savedWaitlist);
-    setClasses(savedClasses);
+    setBookings(activeBookings);
+    setWaitlist(activeWaitlist);
+    setClasses(activeClasses);
     setSpotLocks(savedLocks);
-    setTransactions(savedTransactions);
+    setTransactions(activeTransactions);
     setHydrated(true);
     registerPushNotifications();
   }, []);
@@ -481,6 +524,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       address?: string;
       referralSource?: string;
       communicationConsent?: boolean;
+      tags?: string[];
     }
   ): Customer => {
     const existing = customerData.id
@@ -506,6 +550,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
         address: customerData.address,
         referralSource: customerData.referralSource,
         communicationConsent: customerData.communicationConsent,
+        tags: customerData.tags,
       };
       setCustomers(prev => prev.map(c => c.id === resultCustomer.id ? resultCustomer : c));
     } else {
@@ -527,6 +572,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
         address: customerData.address || '',
         referralSource: customerData.referralSource || '',
         communicationConsent: customerData.communicationConsent !== undefined ? customerData.communicationConsent : false,
+        tags: customerData.tags || [],
       };
       setCustomers(prev => [...prev, resultCustomer]);
     }
@@ -563,7 +609,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     customerName:  string,
     customerEmail: string,
     customerPhone?: string,
-    promoCode?:    string
+    promoCode?:    string,
+    handledBy?:    string
   ): { success: boolean; message: string; booking?: Booking } => {
     const cls = classes.find(c => c.id === classId);
     if (!cls) return { success: false, message: 'Class not found.' };
@@ -644,6 +691,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       amount: method === 'credit' ? 0 : total,
       status: 'paid',
       bookingId: newBooking.id,
+      handledBy: handledBy || 'Cams Rivera',
     };
     setTransactions(prev => [newTx, ...prev]);
 
@@ -967,6 +1015,62 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     );
   }, [classes, waitlist, bookSpot]);
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // CLASS MANAGEMENT (Schedule Builder)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const addClass = useCallback((classData: Omit<FitnessClass, 'id' | 'bookedSpots'>): FitnessClass => {
+    const newClass: FitnessClass = {
+      ...classData,
+      id: `class-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      bookedSpots: [],
+    };
+    setClasses(prev => {
+      const next = [...prev, newClass];
+      saveToStorage('evolve_classes', next);
+      return next;
+    });
+    sendMessage('CLASS_UPDATED', newClass);
+    return newClass;
+  }, [sendMessage]);
+
+  const updateClass = useCallback((classId: string, updates: Partial<Omit<FitnessClass, 'id' | 'bookedSpots'>>) => {
+    let updatedClass: FitnessClass | undefined;
+    setClasses(prev => {
+      const next = prev.map(c => {
+        if (c.id === classId) {
+          updatedClass = { ...c, ...updates };
+          return updatedClass;
+        }
+        return c;
+      });
+      saveToStorage('evolve_classes', next);
+      return next;
+    });
+    if (updatedClass) {
+      sendMessage('CLASS_UPDATED', updatedClass);
+    }
+  }, [sendMessage]);
+
+  const deleteClass = useCallback((classId: string): { success: boolean; message: string } => {
+    const activeBookings = bookings.filter(
+      b => b.classId === classId && b.status !== 'cancelled'
+    );
+    if (activeBookings.length > 0) {
+      return {
+        success: false,
+        message: `Cannot delete: ${activeBookings.length} active booking(s) exist for this class.`,
+      };
+    }
+    setClasses(prev => {
+      const next = prev.filter(c => c.id !== classId);
+      saveToStorage('evolve_classes', next);
+      return next;
+    });
+    sendMessage('CLASS_DELETED', { classId });
+    return { success: true, message: 'Class deleted successfully.' };
+  }, [bookings, sendMessage]);
+
   const addTransaction = useCallback((txData: Omit<Transaction, 'id' | 'timestamp'> & { id?: string; timestamp?: string }) => {
     const newTx: Transaction = {
       id: txData.id || `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -980,6 +1084,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       amount: txData.amount,
       status: txData.status,
       bookingId: txData.bookingId,
+      handledBy: txData.handledBy || 'Cams Rivera',
     };
     setTransactions(prev => {
       const next = [newTx, ...prev];
@@ -1021,6 +1126,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       promoteFromWaitlist, releaseExpiredHolds,
       lockSpot, unlockSpot,
       addTransaction, updateTransactionStatus,
+      addClass, updateClass, deleteClass,
     }}>
       {children}
     </BookingContext.Provider>

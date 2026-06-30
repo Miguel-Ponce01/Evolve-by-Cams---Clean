@@ -39,6 +39,9 @@ export default function BookingTerminalPage() {
   const cls = useMemo(() => getClassById(classId as string), [getClassById, classId]);
   const classWaitlist = useMemo(() => waitlist.filter(w => w.classId === cls?.id), [waitlist, cls?.id]);
 
+  // POS Form State
+  const [selectedSpot, setSelectedSpot] = useState<number | null>(null);
+
   // Spot action popover state
   const [activePopoverSpot, setActivePopoverSpot]   = useState<number | null>(null);
   const [popoverMsg,         setPopoverMsg]         = useState<string>('');
@@ -68,6 +71,44 @@ export default function BookingTerminalPage() {
       }
     };
   }, [selectedSpot, classId, unlockSpot]);
+
+  // ── 5-Minute Spot Hold Countdown ──────────────────────────────────────
+  const [spotHeldSince, setSpotHeldSince] = useState<number | null>(null);
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(300);
+
+  // Reset timer when spot is selected or cleared
+  useEffect(() => {
+    if (selectedSpot) {
+      setSpotHeldSince(Date.now());
+      setSecondsRemaining(300);
+    } else {
+      setSpotHeldSince(null);
+      setSecondsRemaining(300);
+    }
+  }, [selectedSpot]);
+
+  // Tick the countdown every second
+  useEffect(() => {
+    if (!spotHeldSince || !selectedSpot) return;
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - spotHeldSince) / 1000);
+      const remaining = Math.max(0, 300 - elapsed);
+      setSecondsRemaining(remaining);
+      if (remaining === 0) {
+        // Auto-release the spot
+        unlockSpot(classId as string, selectedSpot);
+        setSelectedSpot(null);
+        clearInterval(interval);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [spotHeldSince, selectedSpot, classId, unlockSpot]);
+
+  function formatCountdown(secs: number) {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
 
   // ── Front-Desk Kiosk Auto-Clear Inactivity Timer (45 Seconds) ───────────
   useEffect(() => {
@@ -132,7 +173,6 @@ export default function BookingTerminalPage() {
   }, [cls]);
 
   // POS Form State
-  const [selectedSpot, setSelectedSpot] = useState<number | null>(null);
   
   // Customer lookup/registration state
   const [searchQuery, setSearchQuery] = useState('');
@@ -148,6 +188,7 @@ export default function BookingTerminalPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isProcessingCard, setIsProcessingCard] = useState(false);
   const [terminalStateMsg, setTerminalStateMsg] = useState('');
+  const [selectedStaff, setSelectedStaff] = useState('Cams Rivera');
 
   // Waitlist form state (if class is full)
   const [wlName, setWlName] = useState('');
@@ -274,7 +315,8 @@ export default function BookingTerminalPage() {
       custName,
       custEmail,
       custPhone,
-      promoApplied ? 'EVOLVE10' : undefined
+      promoApplied ? 'EVOLVE10' : undefined,
+      selectedStaff
     );
 
     if (res.success && res.booking) {
@@ -597,7 +639,22 @@ export default function BookingTerminalPage() {
                     )}
 
                     {isSelected && (
-                      <CheckCircle2 className="absolute -top-1.5 -right-1.5 text-primary bg-white rounded-full w-5 h-5 shadow-sm border border-primary/10" />
+                      <>
+                        <div className={cn(
+                          "absolute inset-0 flex flex-col items-center justify-center rounded-2xl p-1.5 text-center backdrop-blur-xs transition-colors z-10",
+                          secondsRemaining <= 60
+                            ? "bg-red-500/10 border border-red-500/30 text-red-700"
+                            : "bg-amber-500/10 border border-amber-500/30 text-amber-700"
+                        )}>
+                          <Badge className={cn(
+                            "text-[8px] font-black uppercase tracking-widest mb-1 px-1.5 py-0.5 rounded-sm border-none text-white",
+                            secondsRemaining <= 60 ? "bg-red-500 animate-pulse" : "bg-amber-500"
+                          )}>Held</Badge>
+                          <span className="text-[9px] font-extrabold text-foreground">Spot #{spotNumber} held</span>
+                          <span className="text-xs font-black font-mono mt-0.5">{formatCountdown(secondsRemaining)}</span>
+                        </div>
+                        <CheckCircle2 className="absolute -top-1.5 -right-1.5 text-primary bg-white rounded-full w-5 h-5 shadow-sm border border-primary/10 z-20" />
+                      </>
                     )}
                   </button>
                 );
@@ -758,6 +815,51 @@ export default function BookingTerminalPage() {
                 >
                   Change Spot
                 </button>
+              </div>
+
+              {/* 5-Minute Spot Hold Countdown Banner */}
+              {selectedSpot && (
+                <div className={cn(
+                  'flex items-center justify-between px-3 py-2 rounded-xl border text-[11px] font-bold transition-colors',
+                  secondsRemaining <= 20
+                    ? 'bg-red-50 border-red-300 text-red-700'
+                    : secondsRemaining <= 60
+                    ? 'bg-amber-50 border-amber-300 text-amber-700'
+                    : 'bg-primary/5 border-primary/20 text-primary'
+                )}>
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      'w-2 h-2 rounded-full animate-pulse',
+                      secondsRemaining <= 20 ? 'bg-red-500' : secondsRemaining <= 60 ? 'bg-amber-500' : 'bg-primary'
+                    )} />
+                    <span>Spot #{selectedSpot} held for</span>
+                  </div>
+                  <span className="font-mono font-black text-sm tracking-widest">
+                    {formatCountdown(secondsRemaining)}
+                  </span>
+                </div>
+              )}
+
+              {/* Staff Selector */}
+              <div className="space-y-2">
+                <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Assisting Staff / Coach</label>
+                <div className="grid grid-cols-2 gap-2 bg-secondary/20 p-1.5 rounded-2xl border border-border/40">
+                  {['Cams Rivera', 'Sarah Lee', 'Alex Tran', 'Evolve Staff'].map(staff => (
+                    <button
+                      key={staff}
+                      type="button"
+                      onClick={() => setSelectedStaff(staff)}
+                      className={cn(
+                        "py-1.5 px-1 text-[9px] font-mono font-bold rounded-xl border text-center transition-all cursor-pointer",
+                        selectedStaff === staff
+                          ? "bg-primary text-white border-primary shadow-xs"
+                          : "bg-white border-border text-muted-foreground hover:bg-secondary/40"
+                      )}
+                    >
+                      {staff === 'Cams Rivera' ? '👑 Cams' : staff === 'Sarah Lee' ? '👟 Sarah' : staff === 'Alex Tran' ? '👟 Alex' : '🧑‍💻 Staff'}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* 1. Customer Search Registry Selector */}

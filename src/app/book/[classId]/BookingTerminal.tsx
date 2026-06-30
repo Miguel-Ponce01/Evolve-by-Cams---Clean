@@ -320,7 +320,7 @@ export default function BookingTerminalPage() {
     );
 
     if (res.success && res.booking) {
-      router.push(`/book/${classId}/success/${res.booking.id}`);
+      router.push(`/book/${classId}/success/receipt?bookingId=${res.booking.id}`);
     } else {
       setErrorMessage(res.message);
     }

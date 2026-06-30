@@ -270,7 +270,7 @@ export default function ScheduleBuilderPage() {
 
       {/* ── Filters ── */}
       <div className="bg-white border border-border rounded-2xl p-4 mb-5 shadow-sm">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -287,7 +287,7 @@ export default function ScheduleBuilderPage() {
           {/* Instructor filter */}
           <CustomSelect value={filterInstructor} onChange={setFilterInstructor} options={instrOptions} placeholder="All Coaches" />
           {/* Date range */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 lg:col-span-2">
             <input
               type="date"
               value={filterDateFrom}

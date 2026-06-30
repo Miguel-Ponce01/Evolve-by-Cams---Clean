@@ -439,7 +439,7 @@ export default function SalesLedgerPage() {
                         <td className="p-4">
                           {b ? (
                             <Link 
-                              href={`/book/${b.classId}/success/${b.id}`} 
+                              href={`/book/${b.classId}/success/receipt?bookingId=${b.id}`} 
                               onClick={e => e.stopPropagation()}
                               className="text-primary font-bold hover:underline"
                             >
@@ -623,7 +623,7 @@ export default function SalesLedgerPage() {
                   <div className="flex justify-between items-center">
                     {b ? (
                       <Link 
-                        href={`/book/${b.classId}/success/${b.id}`} 
+                        href={`/book/${b.classId}/success/receipt?bookingId=${b.id}`} 
                         onClick={e => e.stopPropagation()}
                         className="text-primary font-bold text-sm hover:underline"
                       >

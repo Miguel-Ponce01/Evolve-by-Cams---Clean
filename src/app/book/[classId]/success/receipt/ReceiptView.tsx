@@ -1,15 +1,17 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useMemo, useState, useEffect, Suspense } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useBooking } from '@/context/BookingContext';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Printer, Mail, MessageSquare, Calendar, ChevronRight, Copy, Sparkles } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
-export default function BookingSuccessReceiptPage() {
-  const { classId, bookingId } = useParams();
+function BookingSuccessReceiptPageContent() {
+  const { classId } = useParams();
+  const searchParams = useSearchParams();
+  const bookingId = searchParams.get('bookingId');
   const router = useRouter();
   const { getClassById, bookings } = useBooking();
 
@@ -460,5 +462,13 @@ Write only the final message body text. Keep it concise. For SMS, keep it under 
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BookingSuccessReceiptPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+      <BookingSuccessReceiptPageContent />
+    </Suspense>
   );
 }

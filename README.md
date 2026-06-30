@@ -81,6 +81,6 @@ The project is configured for static Next.js export (`output: 'export'`) to enab
 * **[/src/app](file:///c:/Users/MYPC/Documents/Evolve%20by%20Cams%20-%20Clean/src/app)**: App Router pages.
   * **[page.tsx](file:///c:/Users/MYPC/Documents/Evolve%20by%20Cams%20-%20Clean/src/app/page.tsx)**: Main POS terminal dashboard.
   * **[/book/[classId]](file:///c:/Users/MYPC/Documents/Evolve%20by%20Cams%20-%20Clean/src/app/book/[classId])**: Reformer selection and booking intake page.
-  * **[/success/[bookingId]](file:///c:/Users/MYPC/Documents/Evolve%20by%20Cams%20-%20Clean/src/app/book/[classId]/success/[bookingId])**: Dynamic static page generating printed receipts and mobile alerts.
+  * **[/success/receipt](file:///c:/Users/MYPC/Documents/Evolve%20by%20Cams%20-%20Clean/src/app/book/[classId]/success/receipt)**: Booking receipt page generating printed receipts and mobile alerts.
 * **[/agents](file:///c:/Users/MYPC/Documents/Evolve%20by%20Cams%20-%20Clean/agents)**: Python agent persona configurations and the orchestrator script ([manager.py](file:///c:/Users/MYPC/Documents/Evolve%20by%20Cams%20-%20Clean/agents/manager.py)).
 * **[/android](file:///c:/Users/MYPC/Documents/Evolve%20by%20Cams%20-%20Clean/android)**: Target platform wrapper folder for native Capacitor Android apps.

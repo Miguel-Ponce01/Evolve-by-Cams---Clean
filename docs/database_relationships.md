@@ -2,40 +2,56 @@
 
 This guide explains the database structure of the Evolve Booking System in plain English, highlighting how each table connects to others.
 
-## Database Relationship Flowchart
+## Database Relationship & Function Flowchart
+
+This diagram shows how tables connect via foreign keys (solid lines) and how the core database functions read or write to specific tables (dashed lines).
 
 ```mermaid
 graph TD
-  Profiles[profiles Table<br/>- id PK<br/>- full_name<br/>- phone<br/>- member_id UK<br/>- membership_status<br/>- waiver_signed_at]
+  %% Tables
+  profiles[profiles Table]
+  family_members[family_members Table]
+  instructors[instructors Table]
+  recurring_series[recurring_series Table]
+  classes[classes Table]
+  rig_points[rig_points Table]
+  bookings[bookings Table]
+  credit_ledger[credit_ledger Table]
+  booking_policy[booking_policy Table]
   
-  FamilyMembers[family_members Table<br/>- id PK<br/>- primary_user_id FK<br/>- full_name<br/>- relationship<br/>- waiver_signed_at]
+  %% Functions
+  book_class_fn[book_class Function]:::functionCard
+  cancel_booking_fn[cancel_booking Function]:::functionCard
 
-  Instructors[instructors Table<br/>- id PK<br/>- full_name<br/>- bio]
+  %% Styling
+  classDef functionCard fill:#f5e6c4,stroke:#C9A961,stroke-width:2px,color:#0A0A0A;
 
-  RecurringSeries[recurring_series Table<br/>- id PK<br/>- title<br/>- class_type<br/>- instructor_id FK<br/>- day_of_week<br/>- start_time<br/>- duration_minutes<br/>- capacity<br/>- credits_cost<br/>- active]
+  %% Foreign Key Relations (Solid Arrows)
+  family_members -->|primary_user_id FK| profiles
+  recurring_series -->|instructor_id FK| instructors
+  classes -->|instructor_id FK| instructors
+  classes -->|recurring_series_id FK| recurring_series
+  bookings -->|class_id FK| classes
+  bookings -->|user_id FK| profiles
+  bookings -->|family_member_id FK| family_members
+  bookings -->|rig_point_id FK| rig_points
+  credit_ledger -->|user_id FK| profiles
+  credit_ledger -->|booking_id FK| bookings
 
-  Classes[classes Table<br/>- id PK<br/>- title<br/>- class_type<br/>- instructor_id FK<br/>- starts_at<br/>- duration_minutes<br/>- capacity<br/>- min_to_run<br/>- credits_cost<br/>- recurring_series_id FK<br/>- status]
+  %% Function Data Flows (Dashed Arrows)
+  book_class_fn -.->|1. Reads policy configs| booking_policy
+  book_class_fn -.->|2. Verifies active membership & waiver| profiles
+  book_class_fn -.->|3. Locks row & checks capacity| classes
+  book_class_fn -.->|4. Checks available credit balance| credit_ledger
+  book_class_fn -.->|5. Claims rig point / inserts booking| bookings
+  book_class_fn -.->|6. Deducts class credits| credit_ledger
 
-  RigPoints[rig_points Table<br/>- id PK<br/>- label]
-
-  Bookings[bookings Table<br/>- id PK<br/>- class_id FK<br/>- user_id FK<br/>- family_member_id FK<br/>- rig_point_id FK<br/>- status<br/>- waitlist_position<br/>- credits_charged<br/>- checked_in_at<br/>- cancelled_at]
-
-  CreditLedger[credit_ledger Table<br/>- id PK<br/>- user_id FK<br/>- delta<br/>- reason<br/>- booking_id FK]
-
-  BookingPolicy[booking_policy Table<br/>- key PK<br/>- value<br/>- description]
-
-  Profiles -->|has family| FamilyMembers
-  Profiles -->|makes booking| Bookings
-  Profiles -->|has credit transactions| CreditLedger
-  FamilyMembers -->|attends booking| Bookings
-  Instructors -->|teaches series| RecurringSeries
-  Instructors -->|teaches class| Classes
-  RecurringSeries -->|generates instance| Classes
-  Classes -->|holds spot| Bookings
-  RigPoints -->|assigns rig| Bookings
-  Bookings -->|triggers transaction| CreditLedger
+  cancel_booking_fn -.->|1. Reads booking & session date| bookings
+  cancel_booking_fn -.->|2. Verifies 12h cancellation deadline| classes
+  cancel_booking_fn -.->|3. Sets booking status to cancelled| bookings
+  cancel_booking_fn -.->|4. Refunds credits to customer| credit_ledger
+  cancel_booking_fn -.->|5. Promotes next waitlisted user| bookings
 ```
-
 ---
 
 ## 1. Profiles & Account Management

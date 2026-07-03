@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LogOut } from 'lucide-react';
+import { LogOut, ChevronDown } from 'lucide-react';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -22,14 +22,14 @@ export function Navbar() {
   }, []);
 
   // Determine current routing scope
-  const isAdmin = pathname.startsWith('/portal') || 
-                  pathname.startsWith('/roster') || 
-                  pathname.startsWith('/schedule') || 
+  const isAdmin = pathname.startsWith('/portal') ||
+                  pathname.startsWith('/roster') ||
+                  pathname.startsWith('/schedule') ||
                   pathname.startsWith('/analytics');
 
-  const isClient = pathname.startsWith('/dashboard') || 
-                   pathname.startsWith('/wallet') || 
-                   pathname.startsWith('/profile') || 
+  const isClient = pathname.startsWith('/dashboard') ||
+                   pathname.startsWith('/wallet') ||
+                   pathname.startsWith('/profile') ||
                    pathname.startsWith('/memberships');
 
   // Define nav links based on layout mode
@@ -57,64 +57,68 @@ export function Navbar() {
       { name: 'Classes', path: '/book' },
       { name: 'Coaches', path: '/instructors' },
       { name: 'Packages', path: '/memberships' },
+      { name: 'Schedule', path: '/schedule' },
       { name: 'About', path: '/about' },
     ];
   };
 
   const navItems = getNavItems();
 
+  // Gold accent color used consistently across all themes
+  const GOLD = '#C9A961';
+
   return (
     <>
-      {/* ── DESKTOP NAVIGATION BAR (TOP-BAR) ── */}
-      <header 
+      {/* ── DESKTOP NAVIGATION BAR ── */}
+      <header
         className={cn(
-          "hidden lg:flex w-full sticky top-0 z-40 transition-all border-b",
+          'hidden lg:flex w-full sticky top-0 z-40 transition-all border-b',
           isAdmin
-            ? "bg-white border-zinc-200 text-black"
+            ? 'bg-[#0A0A0A] border-zinc-800 text-white'
             : isClient
-            ? "bg-white border-zinc-200 text-black"
-            : "bg-white/70 backdrop-blur-md border-zinc-200 text-black"
+            ? 'bg-[#0A0A0A] border-zinc-800 text-white'
+            : 'bg-[#0A0A0A]/95 backdrop-blur-md border-zinc-800 text-white'
         )}
       >
-        <div className="container mx-auto px-6 h-24 flex items-center justify-between max-w-[1240px]">
-          
-          {/* Brand Logo Header */}
-          <Link href="/" className="flex items-center gap-1.5 select-none cursor-pointer">
-            {isAdmin ? (
-              <span className="text-3xl font-light tracking-[0.25em] font-serif text-black uppercase leading-none">
+        <div className="container mx-auto px-6 h-20 flex items-center justify-between max-w-[1240px]">
+
+          {/* Brand Logo */}
+          <Link href="/" className="flex items-center gap-1.5 select-none cursor-pointer group">
+            <div className="flex flex-col leading-none">
+              <span className="text-2xl font-light tracking-[0.3em] font-serif text-white uppercase group-hover:text-[#C9A961] transition-colors duration-300">
                 EVOLVE
-                <span className="text-[#7c8cf2] font-mono text-[9px] font-black tracking-widest bg-[#7c8cf2]/10 border border-[#7c8cf2]/20 px-2 py-0.5 rounded ml-2 align-middle">
-                  STAFF
+              </span>
+              {isAdmin ? (
+                <span className="text-[8px] font-mono font-black tracking-widest text-[#C9A961] uppercase mt-0.5">
+                  Staff Portal
                 </span>
-              </span>
-            ) : isClient ? (
-              <span className="text-3xl font-light tracking-[0.25em] font-serif text-black uppercase leading-none">
-                EVOLVE
-                <span className="text-[#7c8cf2] font-mono text-[9px] font-black tracking-widest bg-[#7c8cf2]/10 border border-[#7c8cf2]/20 px-2 py-0.5 rounded ml-2 align-middle">
-                  CLIENT
+              ) : isClient ? (
+                <span className="text-[8px] font-mono font-black tracking-widest text-[#C9A961] uppercase mt-0.5">
+                  Client Dashboard
                 </span>
-              </span>
-            ) : (
-              <span className="text-3xl font-light tracking-[0.25em] font-serif text-black uppercase leading-none transition-colors hover:text-[#7c8cf2]">
-                EVOLVE
-              </span>
-            )}
+              ) : (
+                <span className="text-[8px] font-mono font-black tracking-widest text-zinc-500 uppercase mt-0.5">
+                  Pole Fitness &amp; Aerial Arts
+                </span>
+              )}
+            </div>
           </Link>
 
           {/* Navigation Links and CTA */}
           <div className="flex items-center gap-8 h-full">
             <nav className="flex items-center space-x-8 h-full">
               {navItems.map(item => {
-                const isActive = pathname === item.path;
+                const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path));
                 return (
                   <Link
                     key={item.path + item.name}
                     href={item.path}
                     className={cn(
-                      "text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
-                      isActive 
-                        ? (isAdmin ? "text-[#7c8cf2]" : isClient ? "text-[#7c8cf2]" : "text-[#7c8cf2]")
-                        : (isAdmin ? "text-zinc-550 hover:text-black" : isClient ? "text-zinc-500 hover:text-black" : "text-zinc-500 hover:text-black")
+                      'relative text-[11px] font-black uppercase tracking-widest transition-all duration-200 cursor-pointer py-1',
+                      'after:absolute after:bottom-0 after:left-0 after:h-[2px] after:rounded-full after:transition-all after:duration-300',
+                      isActive
+                        ? `text-[#C9A961] after:w-full after:bg-[#C9A961]`
+                        : `text-zinc-400 hover:text-white after:w-0 hover:after:w-full after:bg-[#C9A961]`
                     )}
                   >
                     {item.name}
@@ -123,11 +127,11 @@ export function Navbar() {
               })}
             </nav>
 
-            {/* Action CTA Button depending on scope */}
+            {/* Action CTA Button */}
             {isAdmin ? (
               <Link
                 href="/"
-                className="py-3 px-5 rounded-md border border-zinc-200 hover:bg-zinc-50 text-zinc-700 font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1.5"
+                className="py-2.5 px-5 rounded-full border border-zinc-700 hover:border-[#C9A961] text-zinc-300 hover:text-[#C9A961] font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1.5"
               >
                 <span>Exit Portal</span>
                 <LogOut size={12} />
@@ -135,53 +139,83 @@ export function Navbar() {
             ) : isClient ? (
               <Link
                 href="/book"
-                className="py-3 px-6 rounded-md bg-[#7c8cf2] hover:bg-[#6c7ef0] text-white font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-sm shadow-[#7c8cf2]/10"
+                className="py-2.5 px-6 rounded-full bg-[#C9A961] hover:bg-[#b09352] text-black font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-md shadow-[#C9A961]/10"
               >
                 Book Session
               </Link>
             ) : (
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4">
                 <Link
                   href="/book"
-                  className="py-2.5 px-6 rounded-full bg-[#7c8cf2] hover:bg-[#6c7ef0] text-white font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-sm shadow-[#7c8cf2]/10"
+                  className="py-2.5 px-6 rounded-full bg-[#C9A961] hover:bg-[#b09352] text-black font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-md shadow-[#C9A961]/20 active:scale-95"
                 >
                   Book a Class
                 </Link>
+
+                {/* Profile / More dropdown */}
                 <div className="relative" ref={menuRef}>
-                  <button 
-                    onClick={() => setIsMenuOpen(!isMenuOpen)} 
-                    className="text-zinc-550 hover:text-[#7c8cf2] transition-colors p-1.5 flex items-center justify-center cursor-pointer rounded-full hover:bg-zinc-50"
-                    aria-label="Features and Profile Settings"
+                  <button
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    className={cn(
+                      'flex items-center gap-1.5 py-2 px-3 rounded-full border text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200',
+                      isMenuOpen
+                        ? 'border-[#C9A961] text-[#C9A961] bg-[#C9A961]/5'
+                        : 'border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-white'
+                    )}
+                    aria-label="More options"
                     aria-expanded={isMenuOpen}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
+                    <span className="text-[10px]">More</span>
+                    <ChevronDown size={11} className={cn('transition-transform duration-200', isMenuOpen ? 'rotate-180' : '')} />
                   </button>
 
                   {isMenuOpen && (
-                    <div className="absolute right-0 mt-3 w-64 bg-white border border-zinc-200 rounded-2xl shadow-xl p-4 z-50 animate-scale-up text-left">
-                      <div className="space-y-4 text-xs font-semibold text-zinc-800">
-                        <div>
-                          <p className="text-[9px] uppercase tracking-widest text-zinc-400 font-black mb-2 select-none">Client Services</p>
-                          <div className="flex flex-col gap-2">
-                            <Link href="/book" onClick={() => setIsMenuOpen(false)} className="hover:text-[#7c8cf2] transition-colors">Class Booking</Link>
-                            <Link href="/dashboard" onClick={() => setIsMenuOpen(false)} className="hover:text-[#7c8cf2] transition-colors">Client Dashboard</Link>
-                            <Link href="/profile" onClick={() => setIsMenuOpen(false)} className="hover:text-[#7c8cf2] transition-colors">My Profile Settings</Link>
-                            <Link href="/memberships" onClick={() => setIsMenuOpen(false)} className="hover:text-[#7c8cf2] transition-colors">Memberships &amp; Packs</Link>
-                          </div>
-                        </div>
+                    <div className="absolute right-0 mt-3 w-68 bg-[#111111] border border-zinc-800 rounded-2xl shadow-2xl shadow-black/60 p-4 z-50 text-left animate-in fade-in slide-in-from-top-2 duration-150">
+                      {/* Client Services */}
+                      <div className="space-y-1">
+                        <p className="text-[9px] uppercase tracking-widest text-zinc-500 font-black mb-2 select-none px-2">
+                          Client Services
+                        </p>
+                        {[
+                          { label: 'Class Booking', href: '/book' },
+                          { label: 'Client Dashboard', href: '/dashboard' },
+                          { label: 'My Profile', href: '/profile' },
+                          { label: 'Memberships & Packs', href: '/memberships' },
+                          { label: 'Wallet & Transactions', href: '/wallet' },
+                        ].map(link => (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            onClick={() => setIsMenuOpen(false)}
+                            className="block px-3 py-2 rounded-lg text-xs font-semibold text-zinc-300 hover:text-white hover:bg-white/5 transition-all duration-150"
+                          >
+                            {link.label}
+                          </Link>
+                        ))}
+                      </div>
 
-                        <div className="border-t border-zinc-100 pt-3">
-                          <p className="text-[9px] uppercase tracking-widest text-zinc-400 font-black mb-2 select-none">Staff &amp; Admin Panel</p>
-                          <div className="flex flex-col gap-2">
-                            <Link href="/portal" onClick={() => setIsMenuOpen(false)} className="hover:text-[#7c8cf2] transition-colors font-bold text-zinc-900">Staff Control Console</Link>
-                            <Link href="/schedule" onClick={() => setIsMenuOpen(false)} className="hover:text-[#7c8cf2] transition-colors">Class Schedule Builder</Link>
-                            <Link href="/roster" onClick={() => setIsMenuOpen(false)} className="hover:text-[#7c8cf2] transition-colors">Roster Analytics</Link>
-                            <Link href="/wallet" onClick={() => setIsMenuOpen(false)} className="hover:text-[#7c8cf2] transition-colors">Wallet Transactions</Link>
-                            <Link href="/analytics" onClick={() => setIsMenuOpen(false)} className="hover:text-[#7c8cf2] transition-colors">Occupancy &amp; Reports</Link>
-                          </div>
-                        </div>
+                      <div className="border-t border-zinc-800 mt-3 pt-3 space-y-1">
+                        <p className="text-[9px] uppercase tracking-widest text-zinc-500 font-black mb-2 select-none px-2">
+                          Staff &amp; Admin
+                        </p>
+                        {[
+                          { label: 'Staff Control Console', href: '/portal' },
+                          { label: 'Class Schedule Builder', href: '/schedule' },
+                          { label: 'Roster Analytics', href: '/roster' },
+                          { label: 'Occupancy & Reports', href: '/analytics' },
+                        ].map(link => (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            onClick={() => setIsMenuOpen(false)}
+                            className="block px-3 py-2 rounded-lg text-xs font-semibold text-zinc-400 hover:text-[#C9A961] hover:bg-[#C9A961]/5 transition-all duration-150"
+                          >
+                            {link.label}
+                          </Link>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -192,82 +226,64 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* ── TABLET/MOBILE HEADER ── */}
-      <header 
+      {/* ── MOBILE / TABLET HEADER ── */}
+      <header
         className={cn(
-          "lg:hidden w-full sticky top-0 z-40 px-4 py-4 flex items-center justify-between transition-colors border-b",
-          isAdmin
-            ? "bg-white border-zinc-200 text-black"
-            : isClient
-            ? "bg-white border-zinc-200 text-black"
-            : "bg-white border-zinc-200 text-black"
+          'lg:hidden w-full sticky top-0 z-40 px-4 py-3 flex items-center justify-between transition-colors border-b',
+          'bg-[#0A0A0A] border-zinc-800 text-white'
         )}
       >
-        <Link href="/" className="flex items-center select-none cursor-pointer">
-          {isAdmin ? (
-            <span className="text-xl font-light tracking-[0.2em] font-serif text-black uppercase leading-none">
-              EVOLVE <span className="text-[#7c8cf2] font-mono text-[8px] font-bold">STAFF</span>
-            </span>
-          ) : isClient ? (
-            <span className="text-xl font-light tracking-[0.2em] font-serif text-black uppercase leading-none">
-              EVOLVE <span className="text-[#7c8cf2] font-mono text-[8px] font-bold">CLIENT</span>
-            </span>
-          ) : (
-            <span className="text-xl font-light tracking-[0.2em] font-serif text-black uppercase leading-none">
-              EVOLVE
-            </span>
+        <Link href="/" className="flex flex-col select-none cursor-pointer">
+          <span className="text-lg font-light tracking-[0.25em] font-serif text-white uppercase leading-none">
+            EVOLVE
+          </span>
+          {isAdmin && (
+            <span className="text-[7px] text-[#C9A961] tracking-widest font-mono font-black uppercase">Staff Portal</span>
+          )}
+          {isClient && (
+            <span className="text-[7px] text-[#C9A961] tracking-widest font-mono font-black uppercase">Client</span>
           )}
         </Link>
 
         {isAdmin ? (
           <Link
             href="/"
-            className="py-2 px-3 rounded-md bg-white border border-zinc-200 text-zinc-700 font-black text-[9px] uppercase tracking-wider"
+            className="py-1.5 px-3 rounded-full border border-zinc-700 text-zinc-400 font-black text-[9px] uppercase tracking-wider hover:border-[#C9A961] hover:text-[#C9A961] transition-all"
           >
             Exit
-          </Link>
-        ) : isClient ? (
-          <Link
-            href="/book"
-            className="py-1.5 px-4 rounded-full bg-[#7c8cf2] text-white font-black text-[10px] uppercase tracking-wider"
-          >
-            Book
           </Link>
         ) : (
           <Link
             href="/book"
-            className="py-1.5 px-4 rounded-full bg-[#7c8cf2] text-white font-black text-[10px] uppercase tracking-wider transition-colors"
+            className="py-1.5 px-4 rounded-full bg-[#C9A961] hover:bg-[#b09352] text-black font-black text-[10px] uppercase tracking-wider transition-colors active:scale-95"
           >
             Book
           </Link>
         )}
       </header>
 
-      {/* ── TABLET/MOBILE FOOTER TAB NAVIGATION BAR ── */}
-      <nav 
+      {/* ── MOBILE BOTTOM TAB NAV ── */}
+      <nav
         className={cn(
-          "lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t flex justify-around items-center h-16 px-2 pb-safe transition-colors",
-          isAdmin
-            ? "bg-white border-zinc-200 text-zinc-500"
-            : isClient
-            ? "bg-white border-zinc-200 text-zinc-500"
-            : "bg-white border-zinc-200 text-zinc-500"
+          'lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t flex justify-around items-center h-16 px-2',
+          'bg-[#0A0A0A] border-zinc-800 text-zinc-500'
         )}
       >
         {navItems.map(item => {
-          const isActive = pathname === item.path;
+          const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path));
           return (
             <Link
               key={item.path + item.name}
               href={item.path}
               className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full gap-1 cursor-pointer transition-all",
-                isActive 
-                  ? (isAdmin ? "text-[#7c8cf2] font-black" : isClient ? "text-[#7c8cf2] font-black" : "text-[#7c8cf2] font-black")
-                  : (isAdmin ? "text-zinc-550 hover:text-black" : isClient ? "text-zinc-500 hover:text-black" : "text-zinc-500 hover:text-black")
+                'flex flex-col items-center justify-center flex-1 h-full gap-0.5 cursor-pointer transition-all',
+                isActive ? 'text-[#C9A961]' : 'text-zinc-500 hover:text-zinc-300'
               )}
             >
-              <span className="text-[10px] font-black uppercase tracking-widest leading-none">{item.name}</span>
+              <span className="text-[9px] font-black uppercase tracking-widest leading-none">{item.name}</span>
+              {isActive && (
+                <span className="w-1 h-1 rounded-full bg-[#C9A961] mt-0.5" />
+              )}
             </Link>
           );
         })}

@@ -32,35 +32,35 @@ const PACKAGES: PackageItem[] = [
   {
     id: 'single',
     title: 'Single Class Pass',
-    price: 35,
+    price: 600,
     credits: 1,
-    perClass: '₱35/class',
-    desc: 'Perfect for walk-ins and trial sessions. Valid for all Reformer, Mat, and HIIT classes.',
+    perClass: '₱600/class',
+    desc: 'Perfect for walk-ins and trial sessions. Valid for all Pole, Aerial, Chair, and Yoga classes.',
   },
   {
     id: 'five',
     title: '5-Class Pass Pack',
-    price: 160,
+    price: 2800,
     credits: 5,
-    perClass: '₱32/class',
-    desc: 'Great for weekly regulars. Valid for 90 days. Saves ₱15 compared to single passes.',
+    perClass: '₱560/class',
+    desc: 'Great for weekly regulars. Valid for 90 days. Saves ₱200 compared to single passes.',
     popular: true,
   },
   {
     id: 'ten',
     title: '10-Class Pass Pack',
-    price: 300,
+    price: 5000,
     credits: 10,
-    perClass: '₱30/class',
-    desc: 'Our best value class pack. Valid for 180 days. Saves ₱50 compared to single passes.',
+    perClass: '₱500/class',
+    desc: 'Our best value class pack. Valid for 180 days. Saves ₱1,000 compared to single passes.',
   },
   {
     id: 'unlimited',
     title: 'Unlimited Monthly Pass',
-    price: 199,
+    price: 7500,
     credits: 999,
     perClass: 'Subscription',
-    desc: 'High-vibe unlimited Reformer & Yoga access. Automatically renews monthly. Priority booking.',
+    desc: 'Unlimited access to all Pole, Aerial, Chair & Yoga classes. Automatically renews monthly. Priority booking.',
   },
 ];
 
@@ -273,7 +273,7 @@ export default function PackageSalesPage() {
                     <>
                       <li className="flex items-center gap-2 text-xs font-semibold text-ink-mute">
                         <Check size={13} className="text-emerald-500 shrink-0" />
-                        <span>Valid for all Reformer, Mat & HIIT classes</span>
+                        <span>Valid for all Pole, Aerial, Chair & Yoga classes</span>
                       </li>
                       <li className="flex items-center gap-2 text-xs font-semibold text-ink-mute">
                         <Check size={13} className="text-emerald-500 shrink-0" />
@@ -460,7 +460,7 @@ export default function PackageSalesPage() {
                     <>
                       <li className="flex items-start gap-2">
                         <Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
-                        <span>Valid for all Reformer, Mat & HIIT classes</span>
+                        <span>Valid for all Pole, Aerial, Chair & Yoga classes</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />

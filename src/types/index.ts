@@ -1,4 +1,4 @@
-export type ClassType = 'Reformer' | 'Mat Pilates' | 'HIIT' | 'Yoga' | 'Sculpt';
+export type ClassType = 'Pole Fitness' | 'Aerial Sling' | 'Exole' | 'Sexy Chair' | 'Yoga' | 'Aerial Sling Kids';
 
 export interface Instructor {
   id: string;

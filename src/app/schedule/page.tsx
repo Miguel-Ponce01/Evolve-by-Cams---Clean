@@ -20,7 +20,7 @@ import type { FitnessClass, ClassType, Instructor } from '@/types';
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CLASS_TYPES: ClassType[] = ['Reformer', 'Mat Pilates', 'HIIT', 'Yoga', 'Sculpt'];
+const CLASS_TYPES: ClassType[] = ['Pole Fitness', 'Aerial Sling', 'Exole', 'Sexy Chair', 'Yoga', 'Aerial Sling Kids'];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'All Levels'] as const;
 const TIME_SLOTS = [
   '6:00 AM','7:00 AM','8:00 AM','9:00 AM','10:00 AM','11:00 AM',
@@ -32,19 +32,21 @@ const DURATIONS = [30, 45, 50, 60, 75, 90];
 type Level = typeof LEVELS[number];
 
 const TYPE_COLORS: Record<ClassType, string> = {
-  Reformer:     'bg-violet-500/10 text-violet-700 border-violet-500/20',
-  'Mat Pilates':'bg-sky-500/10 text-sky-700 border-sky-500/20',
-  HIIT:         'bg-red-500/10 text-red-700 border-red-500/20',
-  Yoga:         'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
-  Sculpt:       'bg-amber-500/10 text-amber-700 border-amber-500/20',
+  'Pole Fitness':      'bg-violet-500/10 text-violet-700 border-violet-500/20',
+  'Aerial Sling':      'bg-sky-500/10 text-sky-700 border-sky-500/20',
+  'Exole':             'bg-rose-500/10 text-rose-700 border-rose-500/20',
+  'Sexy Chair':        'bg-pink-500/10 text-pink-700 border-pink-500/20',
+  'Yoga':              'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
+  'Aerial Sling Kids': 'bg-amber-500/10 text-amber-700 border-amber-500/20',
 };
 
 const TYPE_ICONS: Record<ClassType, React.ReactNode> = {
-  Reformer:     <Dumbbell size={12} />,
-  'Mat Pilates':<Sparkles size={12} />,
-  HIIT:         <Flame size={12} />,
-  Yoga:         <Sparkles size={12} />,
-  Sculpt:       <Flame size={12} />,
+  'Pole Fitness':      <Dumbbell size={12} />,
+  'Aerial Sling':      <Sparkles size={12} />,
+  'Exole':             <Flame size={12} />,
+  'Sexy Chair':        <Sparkles size={12} />,
+  'Yoga':              <Sparkles size={12} />,
+  'Aerial Sling Kids': <Sparkles size={12} />,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -55,7 +57,7 @@ function emptyForm() {
   const today = new Date().toISOString().split('T')[0];
   return {
     title: '',
-    type: 'Reformer' as ClassType,
+    type: 'Pole Fitness' as ClassType,
     instructorId: INSTRUCTORS[0].id,
     date: today,
     time: '7:00 AM',
@@ -517,7 +519,7 @@ export default function ScheduleBuilderPage() {
                     type="text"
                     value={form.title}
                     onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                    placeholder="e.g. Full Body Reformer"
+                    placeholder="e.g. Pole Fitness Basics"
                     className="w-full px-3 py-2.5 bg-secondary border border-border rounded-xl focus:outline-none focus:border-primary text-sm font-semibold text-foreground"
                   />
                 </div>

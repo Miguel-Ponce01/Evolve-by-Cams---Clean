@@ -1944,7 +1944,7 @@ export default function CustomerDirectoryPage() {
                   <tbody className="divide-y divide-border/40">
                     <tr className="text-foreground">
                       <td className="py-3 font-semibold">
-                        {selectedTransaction.type === 'booking' ? 'Reformer Pilates Class Booking' : 'Membership training package purchase'}
+                        {selectedTransaction.type === 'booking' ? 'Class Session Booking' : 'Membership training package purchase'}
                         <span className="block text-[10px] text-muted-foreground font-normal mt-0.5">
                           {selectedTransaction.description}
                         </span>

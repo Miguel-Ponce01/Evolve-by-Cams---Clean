@@ -179,10 +179,10 @@ const defaultCustomers: Customer[] = [
 ];
 
 const CREDIT_PACKS = {
-  single:    { credits: 1,   price: 35  },
-  five:      { credits: 5,   price: 160 },
-  ten:       { credits: 10,  price: 300 },
-  unlimited: { credits: 999, price: 199 },
+  single:    { credits: 1,   price: 600  },
+  five:      { credits: 5,   price: 2800 },
+  ten:       { credits: 10,  price: 5000 },
+  unlimited: { credits: 999, price: 7500 },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

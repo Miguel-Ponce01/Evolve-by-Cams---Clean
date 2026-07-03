@@ -427,7 +427,7 @@ Write only the final message body text. Keep it concise. For SMS, keep it under 
                 <div className="text-center py-2 border-b border-border/40 pb-4 mb-4">
                   <span className="text-3xl">🎉</span>
                   <h3 className="font-heading font-black text-lg uppercase text-primary mt-2">Booking Confirmed!</h3>
-                  <p className="text-xs text-muted-foreground">Evolve by Cams Reformer Studio</p>
+                  <p className="text-xs text-muted-foreground">Evolve Pole Fitness & Aerial Arts</p>
                 </div>
 
                 <div className="whitespace-pre-line text-xs font-sans text-ink leading-relaxed font-medium">

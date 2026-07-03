@@ -157,7 +157,7 @@ export default function BookingTerminalPage() {
     }
     if (cls.instructor.id === 'sarah') {
       return [
-        { author: "Aria G.", rating: 5, text: "The HIIT transitions are seamless. Best sweat in the city!" },
+        { author: "Aria G.", rating: 5, text: "The aerial transitions are seamless. Best flow in the city!" },
         { author: "Nate W.", rating: 5, text: "Love the sundown sessions! High energy but very restorative." },
         { author: "Chloe M.", rating: 5, text: "Playlist was amazing, felt like dancing on the mat!" }
       ];
@@ -536,7 +536,7 @@ export default function BookingTerminalPage() {
                       isLockedByOther && 'bg-amber-500/5 border-amber-500/40 opacity-80 cursor-not-allowed'
                     )}
                   >
-                    {/* Visual Reformer Mockup */}
+                    {/* Visual Spot Layout */}
                     <div className="absolute inset-x-3.5 inset-y-2.5 border border-neutral-300 rounded-md flex flex-col justify-between p-1 bg-neutral-50/50">
                       {/* Top: Headrest & Shoulder Blocks */}
                       <div className="flex justify-between items-start w-full px-1">

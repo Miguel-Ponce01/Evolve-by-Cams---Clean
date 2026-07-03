@@ -10,6 +10,20 @@ The purpose of this system is to provide front-desk administrators with an intui
 
 ---
 
+## 🛠️ Technology Stack
+
+The application is built using the following modern web and mobile technologies:
+
+* **Core Framework**: [Next.js 15.3.3](https://nextjs.org/) (App Router, Static HTML Export configured)
+* **View Library**: [React 19.0.0](https://react.dev/) & [Base UI](https://base-ui.com/) (`@base-ui/react` ^1.5.0)
+* **Styling & Theme**: [Tailwind CSS v4](https://tailwindcss.com/) (`tailwindcss` ^4.1.10) with custom vanilla CSS utility tokens mapping the Light Blue, White, and Black branding
+* **Mobile Runtime Wrapper**: [Capacitor v6](https://capacitorjs.com/) (`@capacitor/core`, `@capacitor/android`, `@capacitor/ios`) for packaging as native Android/iOS apps
+* **Terminal Synchronization**: Native Browser `BroadcastChannel` API for local cross-tab event synchronization
+* **AI Core Integration**: [Google Gemini API](https://ai.google.dev/) (via client-side `gemini-2.5-flash` model generation and local Python-based workspaces)
+* **Icons**: [Lucide React](https://lucide.react.dev/)
+
+---
+
 ## 🎨 Slacc Design System Alignment
 
 The user interface strictly adheres to the Slacc brand design principles documented in [DESIGN.md](file:///c:/Users/MYPC/Documents/Evolve%20by%20Cams%20-%20Clean/DESIGN.md):

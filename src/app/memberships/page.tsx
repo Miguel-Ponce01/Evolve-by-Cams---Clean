@@ -13,7 +13,8 @@ import {
   DollarSign,
   Check,
   ShoppingBag,
-  Award
+  Sun,
+  Moon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PackType } from '@/types';
@@ -65,16 +66,15 @@ const PACKAGES: PackageItem[] = [
 ];
 
 export default function PackageSalesPage() {
-  const { customers, buyCreditsForCustomer, addTransaction, updateTransactionStatus } = useBooking();
+  const { customers, buyCreditsForCustomer, addTransaction } = useBooking();
 
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [selectedPack, setSelectedPack] = useState<PackageItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
   const [toastMsg, setToastMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [isProcessingCard, setIsProcessingCard] = useState(false);
-  const [terminalStateMsg, setTerminalStateMsg] = useState('');
   const [selectedStaff, setSelectedStaff] = useState('Cams Rivera');
   const [cashPercent, setCashPercent] = useState<number>(100);
   const [walletPercent, setWalletPercent] = useState<number>(0);
@@ -97,6 +97,11 @@ export default function PackageSalesPage() {
     setErrorMsg('');
   };
 
+  const handleSplitChange = (cash: number) => {
+    setCashPercent(cash);
+    setWalletPercent(100 - cash);
+  };
+
   const handleConfirmPurchase = async () => {
     if (!selectedPack) return;
     if (!selectedCustomerId) {
@@ -114,22 +119,18 @@ export default function PackageSalesPage() {
     const walletAmount = (selectedPack.price * walletPercent) / 100;
 
     if (walletAmount > 0) {
-      // Wallet balance check (simulation)
       const creditsNeeded = walletAmount / 250; // assuming 250 PHP per credit unit
       if (client.credits < creditsNeeded && selectedPack.id !== 'unlimited') {
         setErrorMsg(`Insufficient wallet credits. Client has ${client.credits} credits, but needs ${(creditsNeeded).toFixed(1)} credits to cover ₱${walletAmount.toFixed(2)}.`);
         return;
       }
-      // Deduct client credits
       if (selectedPack.id !== 'unlimited') {
         client.credits = Math.max(0, client.credits - Math.floor(creditsNeeded));
       }
     }
 
-    // Assign credits/tier for the availed pack
     buyCreditsForCustomer(selectedCustomerId, selectedPack.id);
 
-    // Record transaction
     const splitDetails = `Avail: ${selectedPack.title} (${cashPercent}% Paid via ${paymentMethod === 'cash' ? 'Cash' : 'Bank Transfer'}: ₱${cashAmount.toFixed(2)}, ${walletPercent}% Paid via Wallet Credit: ₱${walletAmount.toFixed(2)})`;
     
     addTransaction({
@@ -138,15 +139,14 @@ export default function PackageSalesPage() {
       customerEmail: client.email,
       customerPhone: client.phone,
       description: splitDetails,
-      paymentMethod: paymentMethod === 'cash' ? 'cash' : 'card', // mapped to cash or card
-      amount: cashAmount, // cash collected
+      paymentMethod: paymentMethod === 'cash' ? 'cash' : 'card',
+      amount: cashAmount,
       status: 'paid',
       handledBy: selectedStaff,
     });
 
     setToastMsg(`✓ Successfully availed ${selectedPack.title} for ${client.name}. ₱${cashAmount.toFixed(2)} (${paymentMethod === 'cash' ? 'Cash' : 'Bank Transfer'}) + ₱${walletAmount.toFixed(2)} (Wallet Credit)`);
 
-    // Reset selections on success
     setSelectedPack(null);
     setSelectedCustomerId(null);
     setSearchQuery('');
@@ -158,510 +158,523 @@ export default function PackageSalesPage() {
     setTimeout(() => setToastMsg(''), 5000);
   };
 
+  const themeBg = isDarkMode ? "bg-[#0A0A0A] text-[#F5F5F3]" : "bg-[#FFFFFF] text-[#111111]";
+  const themeCardBg = isDarkMode ? "bg-[#141414] border-[#232323]" : "bg-[#F9F9F9] border-[#E5E5E5]";
+  const themeTextMuted = isDarkMode ? "text-zinc-400" : "text-zinc-500";
+  const themeBorderColor = isDarkMode ? "border-zinc-800" : "border-zinc-200";
+  const themeInputBg = isDarkMode ? "bg-black border-zinc-800 text-white" : "bg-white border-zinc-200 text-black";
+
   return (
-    <div className="container mx-auto px-4 py-6 max-w-5xl">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/" className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors">
-          <ArrowLeft size={16} />
-        </Link>
-        <div>
-          <span className="text-xs uppercase font-mono tracking-widest text-primary font-bold">POS Package Desk</span>
-          <h1 className="text-3xl font-heading font-black tracking-wide uppercase">Membership Packages</h1>
+    <div className={`min-h-screen transition-colors duration-300 pb-16 relative text-left ${themeBg}`}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700&family=Space+Grotesk:wght@400;500;600&display=swap');
+        .display { font-family: 'Big Shoulders Display', sans-serif; text-transform: uppercase; letter-spacing: 0.01em; }
+        .body-font { font-family: 'Space Grotesk', sans-serif; }
+      `}</style>
+
+      {/* ── THEME CONFIG SWITCHER ── */}
+      <div className={`w-full py-3 px-6 flex justify-between items-center border-b ${themeBorderColor}`}>
+        <div className="flex items-center gap-3">
+          <Link href="/" className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isDarkMode ? "bg-zinc-900 text-white hover:bg-zinc-800" : "bg-zinc-100 text-black hover:bg-zinc-200"}`}>
+            <ArrowLeft size={16} />
+          </Link>
+          <span className="text-[10px] font-mono uppercase tracking-widest font-bold">POS Package Desk</span>
         </div>
+        <button
+          onClick={() => setIsDarkMode(!isDarkMode)}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
+            isDarkMode 
+              ? "bg-[#1F1F1F] border-zinc-700 text-white hover:bg-zinc-800" 
+              : "bg-[#F3F4F6] border-zinc-300 text-black hover:bg-zinc-200"
+          }`}
+        >
+          {isDarkMode ? <Sun size={14} className="text-[#C9A961]" /> : <Moon size={14} />}
+          <span>{isDarkMode ? "Light Mode" : "Dark Mode"}</span>
+        </button>
       </div>
 
-      {/* Toast Alert */}
-      {toastMsg && (
-        <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-sm text-emerald-400 font-semibold animate-slide-up">
-          {toastMsg}
+      {/* ── BECOME AN EVOLVE MEMBER BANNER BLOCK (Screenshot 4 design style) ── */}
+      <section className={`py-20 px-6 border-b text-center ${isDarkMode ? "bg-[#111111]" : "bg-zinc-50"}`} style={{ borderColor: isDarkMode ? "#1f1f1f" : "#e5e7eb" }}>
+        <div className="max-w-3xl mx-auto space-y-6">
+          <h2 className={`text-3xl md:text-5xl font-semibold font-serif tracking-wide uppercase leading-tight ${isDarkMode ? "text-white" : "text-black"}`}>
+            Become an Evolve Member <br />
+            and enjoy special savings <br />
+            with our class packages.
+          </h2>
+          <div className="w-24 h-[1px] bg-zinc-500 mx-auto my-6" />
+          <button 
+            onClick={() => alert("Registration setup launched.")}
+            className={`py-3.5 px-8 rounded-full font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-md ${
+              isDarkMode 
+                ? "bg-[#C9A961] hover:bg-[#b09352] text-black" 
+                : "bg-black hover:bg-zinc-800 text-white"
+            }`}
+          >
+            Register Here
+          </button>
         </div>
-      )}
+      </section>
 
-      {/* Error Message */}
-      {errorMsg && (
-        <div className="mb-6 p-3 rounded-xl bg-destructive/15 border border-red-500/30 text-sm text-red-400 font-semibold animate-slide-up">
-          ⚠ Error: {errorMsg}
-        </div>
-      )}
+      {/* ── PACKAGE INTEGRITY & SALES AREA ── */}
+      <div className="container mx-auto px-6 py-10 max-w-5xl">
+        
+        {/* Toast Alert */}
+        {toastMsg && (
+          <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-sm text-emerald-400 font-semibold animate-slide-up">
+            {toastMsg}
+          </div>
+        )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Hand: Package Catalog */}
-        <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {PACKAGES.map((pkg) => (
-            <div
-              key={pkg.id}
-              className={cn(
-                "border border-border bg-white rounded-3xl transition-all flex flex-col justify-between overflow-hidden relative shadow-sm hover:shadow-md",
-                pkg.id === 'unlimited'
-                  ? "border-amber-400 bg-gradient-to-br from-white to-amber-500/5 shadow-[0_0_15px_rgba(245,158,11,0.15)]"
-                  : "hover:border-primary/40"
-              )}
-            >
-              {/* Popular Badge / Unlimited Tag */}
-              {pkg.id === 'unlimited' ? (
-                <div className="absolute top-0 right-0 z-10">
-                  <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-none rounded-bl-2xl font-sans text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 shadow-sm inline-flex items-center gap-1">
-                    <Sparkles size={11} className="animate-pulse" /> Premium
-                  </span>
-                </div>
-              ) : pkg.popular ? (
-                <div className="absolute top-0 right-0 z-10">
-                  <span className="bg-primary text-white rounded-none rounded-bl-2xl font-sans text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 shadow-sm inline-block">
-                    Best Seller
-                  </span>
-                </div>
-              ) : null}
+        {/* Error Message */}
+        {errorMsg && (
+          <div className="mb-6 p-3 rounded-xl bg-destructive/15 border border-red-500/30 text-sm text-red-400 font-semibold animate-slide-up">
+            ⚠ Error: {errorMsg}
+          </div>
+        )}
 
-              {/* Ticket Top Half */}
-              <div className="p-5 flex-1 space-y-4 flex flex-col justify-between">
-                <div className="space-y-2">
-                  <h3 className={cn(
-                    "font-heading font-black text-lg uppercase tracking-wide",
-                    pkg.id === 'unlimited' ? "text-amber-600" : "text-foreground"
-                  )}>
-                    {pkg.title}
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{pkg.desc}</p>
-                </div>
-
-                {/* Benefits checklist */}
-                <ul className="space-y-1.5 pt-2">
-                  {pkg.id === 'single' && (
-                    <>
-                      <li className="flex items-center gap-2 text-xs font-semibold text-ink-mute">
-                        <Check size={13} className="text-emerald-500 shrink-0" />
-                        <span>Valid for all Pole, Aerial, Chair & Yoga classes</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-xs font-semibold text-ink-mute">
-                        <Check size={13} className="text-emerald-500 shrink-0" />
-                        <span>Perfect for walk-ins & trial guests</span>
-                      </li>
-                    </>
-                  )}
-                  {pkg.id === 'five' && (
-                    <>
-                      <li className="flex items-center gap-2 text-xs font-semibold text-ink-mute">
-                        <Check size={13} className="text-emerald-500 shrink-0" />
-                        <span>Saves ₱15 compared to single passes</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-xs font-semibold text-ink-mute">
-                        <Check size={13} className="text-emerald-500 shrink-0" />
-                        <span>Valid for a full 90 days</span>
-                      </li>
-                    </>
-                  )}
-                  {pkg.id === 'ten' && (
-                    <>
-                      <li className="flex items-center gap-2 text-xs font-semibold text-ink-mute">
-                        <Check size={13} className="text-emerald-500 shrink-0" />
-                        <span>Saves ₱50 compared to single passes</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-xs font-semibold text-ink-mute">
-                        <Check size={13} className="text-emerald-500 shrink-0" />
-                        <span>Valid for a full 180 days</span>
-                      </li>
-                    </>
-                  )}
-                  {pkg.id === 'unlimited' && (
-                    <>
-                      <li className="flex items-center gap-2 text-xs font-semibold text-amber-700">
-                        <Check size={13} className="text-amber-500 shrink-0" />
-                        <span>Unlimited classes monthly (Auto-renew)</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-xs font-semibold text-amber-700">
-                        <Check size={13} className="text-amber-500 shrink-0" />
-                        <span>Priority class booking privileges</span>
-                      </li>
-                    </>
-                  )}
-                </ul>
-              </div>
-
-              {/* Dashed Separator with punch notches */}
-              <div className="relative flex items-center py-1">
-                {/* Left Notch */}
-                <div className="absolute -left-2.5 w-5 h-5 rounded-full bg-[#f4ede4] border-r border-border/80 z-10" />
-                {/* Dashed Line */}
-                <div className="w-full border-t-2 border-dashed border-border/75" />
-                {/* Right Notch */}
-                <div className="absolute -right-2.5 w-5 h-5 rounded-full bg-[#f4ede4] border-l border-border/80 z-10" />
-              </div>
-
-              {/* Ticket Bottom Half */}
-              <div className="p-5 flex justify-between items-center bg-secondary/15">
-                <div>
-                  <div className="flex items-baseline gap-0.5">
-                    <span className="text-[10px] font-bold text-muted-foreground">₱</span>
-                    <span className={cn(
-                      "text-2xl font-black font-mono tracking-tight",
-                      pkg.id === 'unlimited' ? "text-amber-600" : "text-primary"
-                    )}>
-                      {pkg.price}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Hand: Package Catalog */}
+          <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {PACKAGES.map((pkg) => (
+              <div
+                key={pkg.id}
+                className={cn(
+                  "border rounded-3xl transition-all flex flex-col justify-between overflow-hidden relative shadow-sm hover:shadow-md",
+                  themeCardBg,
+                  pkg.id === 'unlimited' ? "border-[#C9A961]" : ""
+                )}
+              >
+                {/* Popular Badge */}
+                {pkg.id === 'unlimited' ? (
+                  <div className="absolute top-0 right-0 z-10">
+                    <span className="bg-[#C9A961] text-black rounded-none rounded-bl-2xl font-sans text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 shadow-sm inline-flex items-center gap-1">
+                      <Sparkles size={11} /> Premium
                     </span>
                   </div>
-                  <span className="text-[9px] text-muted-foreground uppercase font-black font-mono tracking-wider block mt-0.5">
-                    {pkg.perClass}
-                  </span>
-                </div>
-
-                <button
-                  onClick={() => {
-                    setSelectedPack(pkg);
-                    setErrorMsg('');
-                  }}
-                  className={cn(
-                    "flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-pill active:scale-[0.98] transition-all cursor-pointer shadow-sm",
-                    pkg.id === 'unlimited'
-                      ? "bg-amber-500 hover:bg-amber-600 text-white"
-                      : "bg-primary hover:bg-primary-press text-on-primary"
-                  )}
-                >
-                  <ShoppingBag size={13} /> Avail
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Right Hand: Checkout / credit details form */}
-        <div className="lg:col-span-4">
-          {!selectedPack ? (
-            <div className="space-y-6">
-              {/* Select Service Prompt */}
-              <div className="bg-card/40 border border-border/50 rounded-3xl text-center py-12 px-6">
-                <span className="text-4xl block mb-2">🛍️</span>
-                <h3 className="font-heading font-black text-lg uppercase">Select Service</h3>
-                <p className="text-sm text-muted-foreground mt-2">Click on "Avail" on any catalog item on the left to begin the client checkout flow.</p>
-              </div>
-
-              {/* Pre-Select Customer Panel */}
-              <div className="bg-card border border-border rounded-3xl p-5 space-y-4 shadow-sm relative">
-                <div className="flex justify-between items-center pb-2 border-b border-border/50">
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Pre-Select Client</span>
-                  {activeCustomer && (
-                    <button
-                      onClick={() => setSelectedCustomerId(null)}
-                      className="text-[9px] text-destructive hover:underline font-bold"
-                    >
-                      Clear Selection
-                    </button>
-                  )}
-                </div>
-
-                {activeCustomer ? (
-                  <div className="bg-secondary/40 border border-border/50 rounded-2xl p-4 space-y-2 text-xs">
-                    <p className="font-bold text-foreground text-sm">{activeCustomer.name}</p>
-                    <p className="text-muted-foreground">{activeCustomer.email}</p>
-                    <div className="flex justify-between items-center pt-2 border-t border-border/20 text-[10px] text-primary font-bold">
-                      <span>Tier: {activeCustomer.membershipTier}</span>
-                      <span>Credits: {activeCustomer.credits}</span>
-                    </div>
+                ) : pkg.popular ? (
+                  <div className="absolute top-0 right-0 z-10">
+                    <span className="bg-[#C9A961] text-black rounded-none rounded-bl-2xl font-sans text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 shadow-sm inline-block">
+                      Best Seller
+                    </span>
                   </div>
-                ) : (
-                  <div className="space-y-2 relative">
-                    <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Search Client Registry</label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                      <input
-                        type="text"
-                        placeholder="Search client to select first..."
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2 text-xs bg-background border border-border rounded-xl focus:outline-none focus:border-primary"
-                      />
+                ) : null}
+
+                {/* Ticket Top Half */}
+                <div className="p-6 flex-1 space-y-4 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <h3 className="font-heading font-black text-lg uppercase tracking-wide">
+                      {pkg.title}
+                    </h3>
+                    <p className={`text-xs leading-relaxed ${themeTextMuted}`}>{pkg.desc}</p>
+                  </div>
+
+                  {/* Benefits checklist */}
+                  <ul className="space-y-1.5 pt-2">
+                    {pkg.id === 'single' && (
+                      <>
+                        <li className="flex items-center gap-2 text-xs font-semibold">
+                          <Check size={13} className="text-[#C9A961] shrink-0" />
+                          <span>Valid for all Pole Group Classes</span>
+                        </li>
+                        <li className="flex items-center gap-2 text-xs font-semibold">
+                          <Check size={13} className="text-[#C9A961] shrink-0" />
+                          <span>Perfect for walk-ins & trial guests</span>
+                        </li>
+                      </>
+                    )}
+                    {pkg.id === 'five' && (
+                      <>
+                        <li className="flex items-center gap-2 text-xs font-semibold">
+                          <Check size={13} className="text-[#C9A961] shrink-0" />
+                          <span>Valid for Pole & Aerial Group Classes</span>
+                        </li>
+                        <li className="flex items-center gap-2 text-xs font-semibold">
+                          <Check size={13} className="text-[#C9A961] shrink-0" />
+                          <span>Valid for a full 90 days</span>
+                        </li>
+                      </>
+                    )}
+                    {pkg.id === 'ten' && (
+                      <>
+                        <li className="flex items-center gap-2 text-xs font-semibold">
+                          <Check size={13} className="text-[#C9A961] shrink-0" />
+                          <span>Pole / Aerial / Exole / Acro / Sexy Chair</span>
+                        </li>
+                        <li className="flex items-center gap-2 text-xs font-semibold">
+                          <Check size={13} className="text-[#C9A961] shrink-0" />
+                          <span>Valid for a full 180 days</span>
+                        </li>
+                      </>
+                    )}
+                    {pkg.id === 'unlimited' && (
+                      <>
+                        <li className="flex items-center gap-2 text-xs font-semibold">
+                          <Check size={13} className="text-[#C9A961] shrink-0" />
+                          <span>Valid for all class offerings</span>
+                        </li>
+                        <li className="flex items-center gap-2 text-xs font-semibold">
+                          <Check size={13} className="text-[#C9A961] shrink-0" />
+                          <span>Priority class booking privileges</span>
+                        </li>
+                      </>
+                    )}
+                  </ul>
+                </div>
+
+                {/* Dashed Separator */}
+                <div className="relative flex items-center py-1">
+                  <div className={`absolute -left-2.5 w-5 h-5 rounded-full border-r z-10 ${isDarkMode ? "bg-[#0A0A0A] border-zinc-800" : "bg-white border-zinc-200"}`} />
+                  <div className={`w-full border-t-2 border-dashed ${isDarkMode ? "border-zinc-800" : "border-zinc-200"}`} />
+                  <div className={`absolute -right-2.5 w-5 h-5 rounded-full border-l z-10 ${isDarkMode ? "bg-[#0A0A0A] border-zinc-800" : "bg-white border-zinc-200"}`} />
+                </div>
+
+                {/* Ticket Bottom Half */}
+                <div className={`p-6 flex justify-between items-center ${isDarkMode ? "bg-black/40" : "bg-zinc-50"}`}>
+                  <div>
+                    <div className="flex items-baseline gap-0.5">
+                      <span className="text-[10px] font-bold">₱</span>
+                      <span className="text-2xl font-black font-mono tracking-tight text-[#C9A961]">
+                        {pkg.price}
+                      </span>
                     </div>
-                    {/* Search Dropdown Matches */}
-                    {filteredCustomers.length > 0 && (
-                      <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-border">
-                        {filteredCustomers.map(c => (
-                          <button
-                            key={c.id}
-                            onClick={() => handleSelectCustomer(c.id)}
-                            className="w-full text-left px-4 py-2 hover:bg-secondary text-xs flex justify-between items-center cursor-pointer"
-                          >
-                            <div>
-                              <p className="font-semibold">{c.name}</p>
-                              <p className="text-xs text-muted-foreground">{c.email}</p>
-                            </div>
-                            <Badge variant="outline" className="text-[10px] font-mono font-bold text-primary">
-                              {c.credits} cr
-                            </Badge>
-                          </button>
-                        ))}
-                      </div>
+                    <span className="text-[9px] uppercase font-black font-mono tracking-wider block mt-0.5">
+                      {pkg.perClass}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setSelectedPack(pkg);
+                      setErrorMsg('');
+                    }}
+                    className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-full active:scale-[0.98] transition-all cursor-pointer shadow-sm ${
+                      isDarkMode 
+                        ? "bg-[#C9A961] text-black hover:bg-[#b09352]" 
+                        : "bg-black text-white hover:bg-zinc-800"
+                    }`}
+                  >
+                    <ShoppingBag size={13} /> Avail
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Right Hand: Checkout */}
+          <div className="lg:col-span-4">
+            {!selectedPack ? (
+              <div className="space-y-6">
+                <div className={`border rounded-3xl text-center py-12 px-6 ${themeCardBg}`}>
+                  <span className="text-4xl block mb-2">🛍️</span>
+                  <h3 className="font-heading font-black text-lg uppercase">Select Service</h3>
+                  <p className={`text-sm mt-2 ${themeTextMuted}`}>Click on "Avail" on any catalog item on the left to begin the client checkout flow.</p>
+                </div>
+
+                {/* Pre-Select Client */}
+                <div className={`border rounded-3xl p-5 space-y-4 shadow-sm relative ${themeCardBg}`}>
+                  <div className={`flex justify-between items-center pb-2 border-b ${themeBorderColor}`}>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider">Pre-Select Client</span>
+                    {activeCustomer && (
+                      <button
+                        onClick={() => setSelectedCustomerId(null)}
+                        className="text-[9px] text-red-500 hover:underline font-bold"
+                      >
+                        Clear Selection
+                      </button>
                     )}
                   </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="bg-card border border-border rounded-3xl p-5 space-y-5 animate-in slide-in-from-right-5 bg-white">
-              <div className="border-b border-border pb-3 flex justify-between items-center">
-                <div>
-                  <h3 className="font-heading font-black text-base uppercase">Avail Pass</h3>
-                  <p className="text-xs text-muted-foreground">Product: <span className="text-primary font-bold">{selectedPack.title}</span></p>
-                </div>
-                <button
-                  onClick={() => setSelectedPack(null)}
-                  className="text-xs text-muted-foreground hover:underline"
-                >
-                  Change
-                </button>
-              </div>
 
-              {/* Package Benefits List */}
-              <div className="bg-primary/[0.03] border border-primary/20 rounded-2xl p-4.5 space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-primary block">Package Benefits</span>
-                <ul className="space-y-2 text-xs text-ink-mute font-medium">
-                  {selectedPack.id === 'single' && (
-                    <>
-                      <li className="flex items-start gap-2">
-                        <Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
-                        <span>Valid for all Pole, Aerial, Chair & Yoga classes</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
-                        <span>Perfect for walk-ins & trial guests</span>
-                      </li>
-                    </>
-                  )}
-                  {selectedPack.id === 'five' && (
-                    <>
-                      <li className="flex items-start gap-2">
-                        <Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
-                        <span>Saves ₱15 compared to single passes</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
-                        <span>Valid for a full 90 days</span>
-                      </li>
-                    </>
-                  )}
-                  {selectedPack.id === 'ten' && (
-                    <>
-                      <li className="flex items-start gap-2">
-                        <Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
-                        <span>Saves ₱50 compared to single passes</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
-                        <span>Valid for a full 180 days</span>
-                      </li>
-                    </>
-                  )}
-                  {selectedPack.id === 'unlimited' && (
-                    <>
-                      <li className="flex items-start gap-2 text-amber-700">
-                        <Check size={14} className="text-amber-500 shrink-0 mt-0.5" />
-                        <span>Unlimited classes monthly (Auto-renew)</span>
-                      </li>
-                      <li className="flex items-start gap-2 text-amber-700">
-                        <Check size={14} className="text-amber-500 shrink-0 mt-0.5" />
-                        <span>Priority class booking privileges</span>
-                      </li>
-                    </>
-                  )}
-                </ul>
-              </div>
-
-              {/* 1. Customer Selector */}
-              <div className="space-y-2 relative">
-                <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Search Client Registry</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder="Search by client name/email..."
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 text-xs bg-background border border-border rounded-xl focus:outline-none focus:border-primary"
-                  />
-                </div>
-                {/* Search Dropdown Matches */}
-                {filteredCustomers.length > 0 && (
-                  <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-border">
-                    {filteredCustomers.map(c => (
-                      <button
-                        key={c.id}
-                        onClick={() => handleSelectCustomer(c.id)}
-                        className="w-full text-left px-4 py-2 hover:bg-secondary text-xs flex justify-between items-center cursor-pointer"
-                      >
-                        <div>
-                          <p className="font-semibold">{c.name}</p>
-                          <p className="text-xs text-muted-foreground">{c.email}</p>
+                  {activeCustomer ? (
+                    <div className={`border rounded-2xl p-4 space-y-2 text-xs ${isDarkMode ? "bg-black border-zinc-800" : "bg-white border-zinc-200"}`}>
+                      <p className="font-bold text-sm">{activeCustomer.name}</p>
+                      <p className={themeTextMuted}>{activeCustomer.email}</p>
+                      <div className={`flex justify-between items-center pt-2 border-t text-[10px] font-bold ${themeBorderColor}`}>
+                        <span>Tier: {activeCustomer.membershipTier}</span>
+                        <span>Credits: {activeCustomer.credits}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 relative">
+                      <label className="block text-[10px] font-mono font-bold uppercase tracking-wider">Search Client Registry</label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
+                        <input
+                          type="text"
+                          placeholder="Search client to select first..."
+                          value={searchQuery}
+                          onChange={e => setSearchQuery(e.target.value)}
+                          className={`w-full pl-9 pr-4 py-2 text-xs rounded-xl focus:outline-none focus:border-[#C9A961] ${themeInputBg}`}
+                        />
+                      </div>
+                      {filteredCustomers.length > 0 && (
+                        <div className={`absolute z-20 top-full left-0 right-0 mt-1 border rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y ${isDarkMode ? "bg-[#141414] border-zinc-800 divide-zinc-800" : "bg-white border-zinc-200 divide-zinc-200"}`}>
+                          {filteredCustomers.map(c => (
+                            <button
+                              key={c.id}
+                              onClick={() => handleSelectCustomer(c.id)}
+                              className="w-full text-left px-4 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-xs flex justify-between items-center cursor-pointer"
+                            >
+                              <div>
+                                <p className="font-semibold">{c.name}</p>
+                                <p className="text-xs text-zinc-500">{c.email}</p>
+                              </div>
+                              <Badge className="text-[10px] font-mono font-bold bg-[#C9A961] text-black">
+                                {c.credits} cr
+                              </Badge>
+                            </button>
+                          ))}
                         </div>
-                        <Badge variant="outline" className="text-[10px] font-mono font-bold text-primary">
-                          {c.credits} cr
-                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className={`border rounded-3xl p-5 space-y-5 shadow-sm ${themeCardBg}`}>
+                <div className={`border-b pb-3 flex justify-between items-center ${themeBorderColor}`}>
+                  <div>
+                    <h3 className="font-heading font-black text-base uppercase">Avail Pass</h3>
+                    <p className="text-xs">Product: <span className="text-[#C9A961] font-bold">{selectedPack.title}</span></p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedPack(null)}
+                    className="text-xs text-red-500 hover:underline"
+                  >
+                    Change
+                  </button>
+                </div>
+
+                <div className={`border rounded-2xl p-4.5 space-y-2 ${isDarkMode ? "bg-black border-zinc-800" : "bg-white border-zinc-200"}`}>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#C9A961] block">Package Benefits</span>
+                  <ul className="space-y-2 text-xs font-medium">
+                    {selectedPack.id === 'single' && (
+                      <>
+                        <li className="flex items-start gap-2">
+                          <Check size={14} className="text-[#C9A961] shrink-0 mt-0.5" />
+                          <span>Valid for all Pole Group Classes</span>
+                        </li>
+                      </>
+                    )}
+                    {selectedPack.id === 'five' && (
+                      <>
+                        <li className="flex items-start gap-2">
+                          <Check size={14} className="text-[#C9A961] shrink-0 mt-0.5" />
+                          <span>Valid for Pole & Aerial Group Classes</span>
+                        </li>
+                      </>
+                    )}
+                    {selectedPack.id === 'ten' && (
+                      <>
+                        <li className="flex items-start gap-2">
+                          <Check size={14} className="text-[#C9A961] shrink-0 mt-0.5" />
+                          <span>Pole / Aerial / Exole / Acro / Sexy Chair</span>
+                        </li>
+                      </>
+                    )}
+                    {selectedPack.id === 'unlimited' && (
+                      <>
+                        <li className="flex items-start gap-2">
+                          <Check size={14} className="text-[#C9A961] shrink-0 mt-0.5" />
+                          <span>Valid for all class offerings</span>
+                        </li>
+                      </>
+                    )}
+                  </ul>
+                </div>
+
+                <div className="space-y-2 relative">
+                  <label className="block text-[10px] font-mono font-bold uppercase tracking-wider">Search Client Registry</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
+                    <input
+                      type="text"
+                      placeholder="Search by client name/email..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      className={`w-full pl-9 pr-4 py-2 text-xs rounded-xl focus:outline-none focus:border-[#C9A961] ${themeInputBg}`}
+                    />
+                  </div>
+                  {filteredCustomers.length > 0 && (
+                    <div className={`absolute z-20 top-full left-0 right-0 mt-1 border rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y ${isDarkMode ? "bg-[#141414] border-zinc-800 divide-zinc-800" : "bg-white border-zinc-200 divide-zinc-200"}`}>
+                      {filteredCustomers.map(c => (
+                        <button
+                          key={c.id}
+                          onClick={() => handleSelectCustomer(c.id)}
+                          className="w-full text-left px-4 py-2 hover:bg-zinc-900 text-xs flex justify-between items-center cursor-pointer"
+                        >
+                          <div>
+                            <p className="font-semibold text-white">{c.name}</p>
+                            <p className="text-xs text-zinc-500">{c.email}</p>
+                          </div>
+                          <Badge className="text-[10px] font-mono font-bold bg-[#C9A961] text-black">
+                            {c.credits} cr
+                          </Badge>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className={`border rounded-2xl p-4 space-y-2 text-xs ${isDarkMode ? "bg-black border-zinc-800" : "bg-white border-zinc-200"}`}>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#C9A961] block">Target Customer</span>
+                  {activeCustomer ? (
+                    <div className="flex justify-between items-start gap-4">
+                      <div>
+                        <p className="font-bold text-sm">{activeCustomer.name}</p>
+                        <p className={themeTextMuted}>{activeCustomer.email}</p>
+                      </div>
+                      <button
+                        onClick={() => setSelectedCustomerId(null)}
+                        className="text-red-500 hover:underline text-[10px]"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-zinc-550 font-semibold text-center py-2">Please search and select a client above to credit this purchase.</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-mono font-bold uppercase tracking-wider">Select payment method</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setPaymentMethod('cash')}
+                      className={cn(
+                        "py-2 px-1 text-xs font-semibold rounded-xl border flex flex-col items-center justify-center gap-1 cursor-pointer",
+                        paymentMethod === 'cash'
+                          ? 'bg-[#C9A961]/20 border-[#C9A961] text-[#C9A961]'
+                          : `bg-transparent border-zinc-700 text-zinc-550 hover:border-[#C9A961]/50`
+                      )}
+                    >
+                      <DollarSign size={13} /> Cash
+                    </button>
+                    <button
+                      onClick={() => setPaymentMethod('card')}
+                      className={cn(
+                        "py-2 px-1 text-xs font-semibold rounded-xl border flex flex-col items-center justify-center gap-1 cursor-pointer",
+                        paymentMethod === 'card'
+                          ? 'bg-[#C9A961]/20 border-[#C9A961] text-[#C9A961]'
+                          : `bg-transparent border-zinc-700 text-zinc-550 hover:border-[#C9A961]/50`
+                      )}
+                    >
+                      <CreditCard size={13} /> Online / Bank Transfer
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-mono font-bold uppercase tracking-wider">Assisting Staff / Coach</label>
+                  <div className={`grid grid-cols-2 gap-2 p-1.5 rounded-2xl border ${isDarkMode ? "bg-black/40 border-zinc-800" : "bg-white border-zinc-200"}`}>
+                    {['Cams Rivera', 'Sarah Lee', 'Alex Tran', 'Evolve Staff'].map(staff => (
+                      <button
+                        key={staff}
+                        type="button"
+                        onClick={() => setSelectedStaff(staff)}
+                        className={cn(
+                          "py-1.5 px-1 text-[9px] font-mono font-bold rounded-xl border text-center transition-all cursor-pointer",
+                          selectedStaff === staff
+                            ? "bg-[#C9A961] text-black border-[#C9A961]"
+                            : `bg-transparent border-zinc-750 text-zinc-500 hover:bg-zinc-900`
+                        )}
+                      >
+                        {staff === 'Cams Rivera' ? '👑 Cams' : staff === 'Sarah Lee' ? '👟 Sarah' : staff === 'Alex Tran' ? '👟 Alex' : '🧑‍💻 Staff'}
                       </button>
                     ))}
                   </div>
-                )}
-              </div>
+                </div>
 
-              {/* 2. Customer Confirmation card */}
-              <div className="bg-secondary/40 border border-border/50 rounded-2xl p-4 space-y-2 text-xs">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-primary block">Target Customer</span>
-                {activeCustomer ? (
-                  <div className="flex justify-between items-start gap-4">
-                    <div>
-                      <p className="font-bold text-foreground text-sm">{activeCustomer.name}</p>
-                      <p className="text-muted-foreground">{activeCustomer.email}</p>
+                <div className={`space-y-3 p-4 rounded-2xl border ${isDarkMode ? "bg-black/30 border-zinc-850" : "bg-white border-zinc-250"}`}>
+                  <div className="flex justify-between items-center">
+                    <label className="block text-[10px] font-mono font-bold uppercase tracking-wider">Credit Wallet Adjustments</label>
+                    {activeCustomer && (
+                      <span className="text-[10px] font-bold text-[#C9A961]">Available: {activeCustomer.credits}</span>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {[
+                      { label: '100/0', cash: 100 },
+                      { label: '90/10', cash: 90 },
+                      { label: '70/30', cash: 70 },
+                      { label: '50/50', cash: 50 },
+                      { label: '30/70', cash: 30 }
+                    ].map((split) => (
+                      <button
+                        key={split.label}
+                        type="button"
+                        onClick={() => handleSplitChange(split.cash)}
+                        className={cn(
+                          "py-1 rounded-lg text-[9px] font-bold border transition-all cursor-pointer text-center",
+                          cashPercent === split.cash
+                            ? "bg-[#C9A961]/20 border-[#C9A961] text-[#C9A961]"
+                            : `border-zinc-700 bg-transparent text-zinc-550`
+                        )}
+                      >
+                        {split.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[9px] font-bold">
+                      <span>Cash/Bank: {cashPercent}%</span>
+                      <span>Wallet Credit: {walletPercent}%</span>
                     </div>
-                    <button
-                      onClick={() => setSelectedCustomerId(null)}
-                      className="text-destructive hover:underline text-[10px]"
-                    >
-                      Clear
-                    </button>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="10"
+                      value={cashPercent}
+                      onChange={(e) => handleSplitChange(Number(e.target.value))}
+                      className="w-full h-1 rounded-lg appearance-none cursor-pointer accent-[#C9A961]"
+                    />
                   </div>
-                ) : (
-                  <p className="text-muted-foreground font-semibold text-center py-2">Please search and select a client above to credit this purchase.</p>
-                )}
-              </div>
-
-              {/* 3. Payment Mode select */}
-              <div className="space-y-2">
-                <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Select payment method</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setPaymentMethod('cash')}
-                    className={cn(
-                      "py-2 px-1 text-xs font-semibold rounded-xl border flex flex-col items-center justify-center gap-1 cursor-pointer",
-                      paymentMethod === 'cash'
-                        ? 'bg-primary/20 border-primary text-primary shadow-[0_0_10px_rgba(245,158,11,0.2)]'
-                        : 'bg-background border-border text-muted-foreground hover:border-primary/50'
-                    )}
-                  >
-                    <DollarSign size={13} /> Cash
-                  </button>
-                  <button
-                    onClick={() => setPaymentMethod('card')}
-                    className={cn(
-                      "py-2 px-1 text-xs font-semibold rounded-xl border flex flex-col items-center justify-center gap-1 cursor-pointer",
-                      paymentMethod === 'card'
-                        ? 'bg-primary/20 border-primary text-primary shadow-[0_0_10px_rgba(245,158,11,0.2)]'
-                        : 'bg-background border-border text-muted-foreground hover:border-primary/50'
-                    )}
-                  >
-                    <CreditCard size={13} /> Online / Bank Transfer
-                  </button>
-                </div>
-              </div>
-
-              {/* Staff Selector */}
-              <div className="space-y-2">
-                <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Assisting Staff / Coach</label>
-                <div className="grid grid-cols-2 gap-2 bg-secondary/20 p-1.5 rounded-2xl border border-border/40">
-                  {['Cams Rivera', 'Sarah Lee', 'Alex Tran', 'Evolve Staff'].map(staff => (
-                    <button
-                      key={staff}
-                      type="button"
-                      onClick={() => setSelectedStaff(staff)}
-                      className={cn(
-                        "py-1.5 px-1 text-[9px] font-mono font-bold rounded-xl border text-center transition-all cursor-pointer",
-                        selectedStaff === staff
-                          ? "bg-primary text-white border-primary shadow-xs"
-                          : "bg-white border-border text-muted-foreground hover:bg-secondary/40"
-                      )}
-                    >
-                      {staff === 'Cams Rivera' ? '👑 Cams' : staff === 'Sarah Lee' ? '👟 Sarah' : staff === 'Alex Tran' ? '👟 Alex' : '🧑‍💻 Staff'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Credit Wallet Split Control */}
-              <div className="space-y-3 p-4 bg-secondary/20 border border-border/60 rounded-2xl">
-                <div className="flex justify-between items-center">
-                  <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Credit Wallet Adjustments</label>
-                  {activeCustomer && (
-                    <span className="text-[10px] font-bold text-primary">Available Credits: {activeCustomer.credits}</span>
-                  )}
-                </div>
-                
-                {/* Preset Splits */}
-                <div className="grid grid-cols-5 gap-1.5">
-                  {[
-                    { label: '100/0', cash: 100 },
-                    { label: '90/10', cash: 90 },
-                    { label: '70/30', cash: 70 },
-                    { label: '50/50', cash: 50 },
-                    { label: '30/70', cash: 30 }
-                  ].map((split) => (
-                    <button
-                      key={split.label}
-                      type="button"
-                      onClick={() => handleSplitChange(split.cash)}
-                      className={cn(
-                        "py-1 rounded-lg text-[9px] font-bold border transition-all cursor-pointer text-center",
-                        cashPercent === split.cash
-                          ? "bg-primary/20 border-primary text-primary"
-                          : "border-border bg-white text-muted-foreground"
-                      )}
-                    >
-                      {split.label}
-                    </button>
-                  ))}
                 </div>
 
-                {/* Slider bar */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[9px] font-bold text-muted-foreground">
-                    <span>Cash/Bank: {cashPercent}%</span>
-                    <span>Wallet Credit: {walletPercent}%</span>
+                <div className={`rounded-2xl p-4 text-xs space-y-2 font-mono border ${themeBorderColor}`}>
+                  <div className="flex justify-between">
+                    <span className={themeTextMuted}>Product Price:</span>
+                    <span>₱{selectedPack.price.toFixed(2)}</span>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="10"
-                    value={cashPercent}
-                    onChange={(e) => handleSplitChange(Number(e.target.value))}
-                    className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
-                  />
+                  <div className="flex justify-between text-[11px]">
+                    <span className={themeTextMuted}>Pay via {paymentMethod === 'cash' ? 'Cash' : 'Bank Transfer'} ({cashPercent}%):</span>
+                    <span className="font-bold">₱{((selectedPack.price * cashPercent) / 100).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className={themeTextMuted}>Pay via Wallet Credits ({walletPercent}%):</span>
+                    <span className="font-bold">₱{((selectedPack.price * walletPercent) / 100).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className={themeTextMuted}>Credits Assigned:</span>
+                    <span className="font-bold text-[#C9A961]">{selectedPack.credits === 999 ? 'Unlimited' : `+${selectedPack.credits} passes`}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2 text-base font-black text-[#C9A961] font-sans" style={{ borderColor: isDarkMode ? "#1f1f1f" : "#e5e7eb" }}>
+                    <span>Grand Total:</span>
+                    <span>₱{selectedPack.price.toFixed(2)}</span>
+                  </div>
                 </div>
-              </div>
 
-              {/* 4. Sales Details invoice */}
-              <div className="bg-secondary/20 rounded-2xl p-4 text-xs space-y-2 font-mono">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Product Price:</span>
-                  <span>₱{selectedPack.price.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-[11px]">
-                  <span className="text-muted-foreground">Pay via {paymentMethod === 'cash' ? 'Cash' : 'Bank Transfer'} ({cashPercent}%):</span>
-                  <span className="font-bold">₱{((selectedPack.price * cashPercent) / 100).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-[11px]">
-                  <span className="text-muted-foreground">Pay via Wallet Credits ({walletPercent}%):</span>
-                  <span className="font-bold">₱{((selectedPack.price * walletPercent) / 100).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Credits Assigned:</span>
-                  <span className="font-bold text-primary">{selectedPack.credits === 999 ? 'Unlimited' : `+${selectedPack.credits} passes`}</span>
-                </div>
-                <div className="flex justify-between border-t border-border/40 pt-2 text-base font-black text-primary font-sans">
-                  <span>Grand Total:</span>
-                  <span>₱{selectedPack.price.toFixed(2)}</span>
-                </div>
+                <button
+                  onClick={handleConfirmPurchase}
+                  disabled={!selectedCustomerId}
+                  className="w-full text-center uppercase tracking-widest py-3.5 font-bold rounded-full bg-[#C9A961] hover:bg-[#b09352] text-black disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
+                >
+                  Confirm Sale & Assign Credits
+                </button>
               </div>
-
-              {/* 5. Checkout button */}
-              <button
-                onClick={handleConfirmPurchase}
-                disabled={!selectedCustomerId}
-                className={cn(
-                  "btn-primary-pill w-full text-center uppercase tracking-widest py-4 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-sans transition-all"
-                )}
-              >
-                Confirm Sale & Assign Credits
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
+
+      {/* ── REGISTERED BUSINESS NAME ON BOTTOM (Screenshot 4 design style) ── */}
+      <section className={`py-12 border-t text-center ${isDarkMode ? "bg-black border-zinc-900" : "bg-zinc-50 border-zinc-200"}`}>
+        <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-black font-sans">
+          Evolve Pole Fitness &amp; Aerial Arts Studio
+        </div>
+      </section>
     </div>
   );
 }

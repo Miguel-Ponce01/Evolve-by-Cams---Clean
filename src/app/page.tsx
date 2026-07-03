@@ -1,26 +1,34 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Sun, Moon } from 'lucide-react';
 
 export default function HomePage() {
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [heroSlide, setHeroSlide] = useState(0);
 
+  // Auto-advance hero carousel every 5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setHeroSlide(prev => (prev + 1) % 5);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
   const classesList = [
     {
       title: 'Pole Fitness - Group Class',
       desc: 'GROUP CLASS. ALL LEVELS.',
       price: '₱1,000',
       link: '/book/class-001',
-      image: '/images/pole_stretch.png'
+      image: '/images/class_pole_group.png'
     },
     {
       title: 'Aerial - Group Class',
       desc: 'GROUP CLASS. ALL LEVELS.',
       price: '₱1,000',
       link: '/book/class-002',
-      image: '/images/aerial_single.jpg'
+      image: '/images/class_aerial_group.png'
     },
     {
       title: 'Pole - Private Class',
@@ -28,7 +36,7 @@ export default function HomePage() {
       price: '₱1,800',
       duration: '1 HR',
       link: '/book/class-003',
-      image: '/images/dance_back.png'
+      image: '/images/class_private.png'
     },
     {
       title: 'Aerial - Private Class',
@@ -36,7 +44,7 @@ export default function HomePage() {
       price: '₱1,800',
       duration: '1 HR',
       link: '/book/class-004',
-      image: '/images/aerial_group.png'
+      image: '/images/class_private.png'
     },
     {
       title: 'Exole (Exotic Pole)',
@@ -44,7 +52,7 @@ export default function HomePage() {
       price: '₱1,800',
       duration: '1 HR',
       link: '/book/class-003',
-      image: '/images/dance_back.png'
+      image: '/images/class_exole.png'
     },
     {
       title: 'Acro Chair',
@@ -52,7 +60,7 @@ export default function HomePage() {
       price: '₱1,800',
       duration: '1 HR',
       link: '/book/class-005',
-      image: '/images/reformer_plank.png'
+      image: '/images/class_chair.png'
     },
     {
       title: 'Sexy Chair',
@@ -60,7 +68,7 @@ export default function HomePage() {
       price: '₱1,800',
       duration: '1 HR',
       link: '/book/class-005',
-      image: '/images/dance_class.png'
+      image: '/images/class_chair.png'
     }
   ];
 
@@ -76,6 +84,12 @@ export default function HomePage() {
         @import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700&family=Space+Grotesk:wght@400;500;600&display=swap');
         .display { font-family: 'Big Shoulders Display', sans-serif; text-transform: uppercase; letter-spacing: 0.01em; }
         .body-font { font-family: 'Space Grotesk', sans-serif; }
+        .hero-carousel { position: relative; overflow: hidden; }
+        .hero-carousel .slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1s ease-in-out; }
+        .hero-carousel .slide.active { opacity: 1; position: relative; }
+        .hero-carousel .slide img { width: 100%; height: 100%; object-fit: cover; }
+        .hero-dot { width: 8px; height: 8px; border-radius: 50%; transition: all 0.3s; cursor: pointer; }
+        .hero-dot.active { width: 28px; border-radius: 9999px; }
       `}</style>
 
 
@@ -99,33 +113,54 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* ── THREE COLUMN HORIZONTAL GALLERY — Real Studio Photos ── */}
-        <div className="w-full max-w-[1240px] mx-auto mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
-          <div className={`group relative h-[380px] overflow-hidden border rounded-lg ${themeBorderColor}`}>
-            <img 
-              src="/images/studio_poles.jpg" 
-              alt="Evolve pole studio room"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
-          </div>
+        {/* ── SCROLLING HERO CAROUSEL — Studio Photos ── */}
+        <div className="w-full max-w-[1240px] mx-auto mt-16 relative z-10">
+          <div className={`hero-carousel h-[420px] md:h-[500px] rounded-xl border overflow-hidden ${themeBorderColor}`}>
+            {[
+              { src: '/images/hero_pole_back.png', alt: 'Pole fitness back view pose' },
+              { src: '/images/hero_aerial_silks.png', alt: 'Aerial silks climb' },
+              { src: '/images/hero_pole_invert.png', alt: 'Pole inverted split' },
+              { src: '/images/hero_aerial_sling.png', alt: 'Aerial sling inversion' },
+              { src: '/images/hero_boots.png', alt: 'Evolve platform boots collection' },
+            ].map((img, i) => (
+              <div key={i} className={`slide ${heroSlide === i ? 'active' : ''}`}>
+                <img 
+                  src={img.src} 
+                  alt={img.alt} 
+                  className="w-full h-full object-cover filter grayscale contrast-110"
+                />
+              </div>
+            ))}
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
 
-          <div className={`group relative h-[380px] overflow-hidden border rounded-lg ${themeBorderColor}`}>
-            <img 
-              src="/images/studio_aerial.jpg" 
-              alt="Aerial arts room with hoop and silks"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
-          </div>
+            {/* Prev / Next arrows */}
+            <button
+              onClick={() => setHeroSlide(p => (p - 1 + 5) % 5)}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/60 flex items-center justify-center transition-all z-10"
+              aria-label="Previous slide"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <button
+              onClick={() => setHeroSlide(p => (p + 1) % 5)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/60 flex items-center justify-center transition-all z-10"
+              aria-label="Next slide"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </button>
 
-          <div className={`group relative h-[380px] overflow-hidden border rounded-lg ${themeBorderColor}`}>
-            <img 
-              src="/images/studio_neon.jpg" 
-              alt="Evolve neon logo sign"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
+            {/* Dot indicators */}
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+              {[0, 1, 2, 3, 4].map(i => (
+                <button
+                  key={i}
+                  onClick={() => setHeroSlide(i)}
+                  className={`hero-dot ${heroSlide === i ? 'active bg-[#C9A961]' : 'bg-white/50 hover:bg-white/80'}`}
+                  aria-label={`Go to slide ${i + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
 

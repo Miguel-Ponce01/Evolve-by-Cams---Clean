@@ -15,26 +15,7 @@ export default function AboutPage() {
   return (
     <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden font-sans pb-16 lg:pb-0 ${themeBg}`}>
       
-      {/* ── THEME CONFIG SWITCHER ── */}
-      <div className={`w-full py-3 px-6 flex justify-between items-center border-b ${themeBorderColor}`}>
-        <div className="flex items-center gap-3">
-          <Link href="/" className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isDarkMode ? "bg-zinc-900 text-white hover:bg-zinc-800" : "bg-zinc-100 text-black hover:bg-zinc-200"}`}>
-            <ArrowLeft size={16} />
-          </Link>
-          <span className="text-[10px] font-mono uppercase tracking-widest font-bold">About Us Info Desk</span>
-        </div>
-        <button
-          onClick={() => setIsDarkMode(!isDarkMode)}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
-            isDarkMode 
-              ? "bg-[#1F1F1F] border-zinc-700 text-white hover:bg-zinc-800" 
-              : "bg-[#F3F4F6] border-zinc-300 text-black hover:bg-zinc-200"
-          }`}
-        >
-          {isDarkMode ? <Sun size={14} className="text-[#C9A961]" /> : <Moon size={14} />}
-          <span>{isDarkMode ? "Light Mode" : "Dark Mode"}</span>
-        </button>
-      </div>
+
 
       {/* ── Page Header ── */}
       <section className="container mx-auto px-6 py-16 max-w-[1240px] text-center">
@@ -73,22 +54,22 @@ export default function AboutPage() {
               environment naturally grew into what many students lovingly call their Happy Place.
             </p>
           </div>
-          <div className={`relative h-[350px] overflow-hidden rounded-xl border bg-zinc-50 ${themeBorderColor}`}>
+          <div className={`relative h-[350px] overflow-hidden rounded-xl border ${themeBorderColor}`}>
             <img 
-              src="/images/aerial_single.jpg" 
-              alt="Happy place training"
-              className="w-full h-full object-cover filter grayscale contrast-110"
+              src="/images/studio_neon.jpg" 
+              alt="Evolve neon logo sign"
+              className="w-full h-full object-cover"
             />
           </div>
         </div>
 
         {/* Row 2: Standardized Excellence */}
         <div className={`grid md:grid-cols-2 gap-12 items-center border-t pt-16 ${themeBorderColor}`}>
-          <div className={`relative h-[350px] overflow-hidden rounded-xl border bg-zinc-50 md:order-2 ${themeBorderColor}`}>
+          <div className={`relative h-[350px] overflow-hidden rounded-xl border md:order-2 ${themeBorderColor}`}>
             <img 
-              src="/images/aerial_group.png" 
-              alt="Standardized instructor training"
-              className="w-full h-full object-cover filter grayscale contrast-110"
+              src="/images/studio_aerial.jpg" 
+              alt="Aerial arts room with hoop and silks"
+              className="w-full h-full object-cover"
             />
           </div>
           <div className="space-y-6 md:order-1 text-left">
@@ -123,11 +104,11 @@ export default function AboutPage() {
               programs to new communities while preserving the heart and integrity of the Evolve experience.
             </p>
           </div>
-          <div className={`relative h-[350px] overflow-hidden rounded-xl border bg-zinc-50 ${themeBorderColor}`}>
+          <div className={`relative h-[350px] overflow-hidden rounded-xl border ${themeBorderColor}`}>
             <img 
-              src="/images/pole_stretch.png" 
-              alt="Franchising and expansion"
-              className="w-full h-full object-cover filter grayscale contrast-110"
+              src="/images/studio_boots.jpg" 
+              alt="Pole dancing boots collection"
+              className="w-full h-full object-cover"
             />
           </div>
         </div>
@@ -137,9 +118,9 @@ export default function AboutPage() {
       {/* ── Full Width Overhead Section ── */}
       <section className={`relative w-full h-[50vh] min-h-[350px] flex items-center justify-center bg-black border-y mt-16 ${themeBorderColor}`}>
         <img 
-          src="/images/studio_room.png" 
-          alt="Evolve studio room space"
-          className="absolute inset-0 w-full h-full object-cover opacity-30 filter grayscale"
+          src="/images/studio_poles.jpg" 
+          alt="Evolve pole studio floor"
+          className="absolute inset-0 w-full h-full object-cover opacity-35"
         />
         <div className="relative z-10 text-center space-y-6 px-6 max-w-3xl">
           <h2 className="text-white text-3xl sm:text-5xl font-semibold font-serif uppercase tracking-wider leading-tight">

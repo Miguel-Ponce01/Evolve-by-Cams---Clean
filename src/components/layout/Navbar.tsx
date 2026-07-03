@@ -144,7 +144,7 @@ export function Navbar() {
                 Book Session
               </Link>
             ) : (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <Link
                   href="/book"
                   className="py-2.5 px-6 rounded-full bg-[#C9A961] hover:bg-[#b09352] text-black font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-md shadow-[#C9A961]/20 active:scale-95"
@@ -152,7 +152,16 @@ export function Navbar() {
                   Book a Class
                 </Link>
 
-                {/* Profile / More dropdown */}
+                {/* Log In button */}
+                <Link
+                  href="/dashboard"
+                  className="py-2.5 px-5 rounded-full border border-zinc-700 hover:border-[#C9A961] text-zinc-300 hover:text-[#C9A961] font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
+                  Log In
+                </Link>
                 <div className="relative" ref={menuRef}>
                   <button
                     onClick={() => setIsMenuOpen(!isMenuOpen)}

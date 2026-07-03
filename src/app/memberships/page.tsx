@@ -172,26 +172,7 @@ export default function PackageSalesPage() {
         .body-font { font-family: 'Space Grotesk', sans-serif; }
       `}</style>
 
-      {/* ── THEME CONFIG SWITCHER ── */}
-      <div className={`w-full py-3 px-6 flex justify-between items-center border-b ${themeBorderColor}`}>
-        <div className="flex items-center gap-3">
-          <Link href="/" className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isDarkMode ? "bg-zinc-900 text-white hover:bg-zinc-800" : "bg-zinc-100 text-black hover:bg-zinc-200"}`}>
-            <ArrowLeft size={16} />
-          </Link>
-          <span className="text-[10px] font-mono uppercase tracking-widest font-bold">POS Package Desk</span>
-        </div>
-        <button
-          onClick={() => setIsDarkMode(!isDarkMode)}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
-            isDarkMode 
-              ? "bg-[#1F1F1F] border-zinc-700 text-white hover:bg-zinc-800" 
-              : "bg-[#F3F4F6] border-zinc-300 text-black hover:bg-zinc-200"
-          }`}
-        >
-          {isDarkMode ? <Sun size={14} className="text-[#C9A961]" /> : <Moon size={14} />}
-          <span>{isDarkMode ? "Light Mode" : "Dark Mode"}</span>
-        </button>
-      </div>
+
 
       {/* ── BECOME AN EVOLVE MEMBER BANNER BLOCK (Screenshot 4 design style) ── */}
       <section className={`py-20 px-6 border-b text-center ${isDarkMode ? "bg-[#111111]" : "bg-zinc-50"}`} style={{ borderColor: isDarkMode ? "#1f1f1f" : "#e5e7eb" }}>

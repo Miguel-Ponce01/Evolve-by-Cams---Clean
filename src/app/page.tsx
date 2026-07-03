@@ -78,21 +78,7 @@ export default function HomePage() {
         .body-font { font-family: 'Space Grotesk', sans-serif; }
       `}</style>
 
-      {/* ── THEME SWITCHER BAR ── */}
-      <div className={`w-full py-3 px-6 flex justify-between items-center border-b ${themeBorderColor}`}>
-        <span className="text-[10px] font-mono uppercase tracking-widest font-bold">Theme Configurator</span>
-        <button
-          onClick={() => setIsDarkMode(!isDarkMode)}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
-            isDarkMode 
-              ? "bg-[#1F1F1F] border-zinc-700 text-white hover:bg-zinc-800" 
-              : "bg-[#F3F4F6] border-zinc-300 text-black hover:bg-zinc-200"
-          }`}
-        >
-          {isDarkMode ? <Sun size={14} className="text-[#C9A961]" /> : <Moon size={14} />}
-          <span>{isDarkMode ? "Light Mode" : "Dark Mode"}</span>
-        </button>
-      </div>
+
       
       {/* ── HERO BANNER SECTION ── */}
       <section className="relative w-full py-24 md:py-36 flex flex-col items-center justify-center text-center px-6">
@@ -113,33 +99,33 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* ── THREE COLUMN HORIZONTAL GALLERY ── */}
+        {/* ── THREE COLUMN HORIZONTAL GALLERY — Real Studio Photos ── */}
         <div className="w-full max-w-[1240px] mx-auto mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
           <div className={`group relative h-[380px] overflow-hidden border rounded-lg ${themeBorderColor}`}>
             <img 
-              src="/images/aerial_single.jpg" 
-              alt="Aerial yoga single pose"
-              className="w-full h-full object-cover filter grayscale contrast-110 transition-transform duration-700 group-hover:scale-105"
+              src="/images/studio_poles.jpg" 
+              alt="Evolve pole studio room"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
+            <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
           </div>
 
           <div className={`group relative h-[380px] overflow-hidden border rounded-lg ${themeBorderColor}`}>
             <img 
-              src="/images/pole_stretch.png" 
-              alt="Pole stretching session"
-              className="w-full h-full object-cover filter grayscale contrast-110 transition-transform duration-700 group-hover:scale-105"
+              src="/images/studio_aerial.jpg" 
+              alt="Aerial arts room with hoop and silks"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
+            <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
           </div>
 
           <div className={`group relative h-[380px] overflow-hidden border rounded-lg ${themeBorderColor}`}>
             <img 
-              src="/images/dance_class.png" 
-              alt="Dance class group"
-              className="w-full h-full object-cover filter grayscale contrast-110 transition-transform duration-700 group-hover:scale-105"
+              src="/images/studio_neon.jpg" 
+              alt="Evolve neon logo sign"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
+            <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
           </div>
         </div>
 
@@ -167,14 +153,14 @@ export default function HomePage() {
       <section className={`py-20 px-6 ${isDarkMode ? "bg-[#0F0F0F]/60" : "bg-zinc-50/60"}`}>
         <div className="max-w-[1240px] mx-auto grid md:grid-cols-12 gap-12 items-center">
           
-          {/* Left Column: Photo */}
-          <div className={`md:col-span-6 relative h-[450px] overflow-hidden rounded-xl border bg-zinc-50 shadow-lg ${themeBorderColor}`}>
+          {/* Left Column: Photo — Real reception desk */}
+          <div className={`md:col-span-6 relative h-[450px] overflow-hidden rounded-xl border shadow-lg ${themeBorderColor}`}>
             <img 
-              src="/images/dance_class.png" 
-              alt="Evolve studio performance"
-              className="w-full h-full object-cover filter grayscale contrast-105 transition-transform duration-1000 hover:scale-105"
+              src="/images/studio_reception.jpg" 
+              alt="Evolve front desk and reception area"
+              className="w-full h-full object-cover transition-transform duration-1000 hover:scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
           </div>
 
           {/* Right Column: History */}

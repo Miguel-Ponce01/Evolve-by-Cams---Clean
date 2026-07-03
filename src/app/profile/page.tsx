@@ -91,6 +91,7 @@ export default function CustomerDirectoryPage() {
   const [regAddress, setRegAddress] = useState('');
   const [regReferralSource, setRegReferralSource] = useState('');
   const [regCommunicationConsent, setRegCommunicationConsent] = useState(false);
+  const [regRole, setRegRole] = useState<'student' | 'instructor'>('student');
   
   // Edit mode
   const [editMode, setEditMode] = useState(false);
@@ -393,9 +394,9 @@ export default function CustomerDirectoryPage() {
       address: regAddress,
       referralSource: regReferralSource,
       communicationConsent: regCommunicationConsent,
-      tags: regTags,
+      tags: [...regTags, regRole === 'instructor' ? 'Instructor' : 'Student'],
     });
-    setToastMsg(`✓ Successfully registered customer: ${newCust.name}`);
+    setToastMsg(`✓ Successfully registered ${regRole}: ${newCust.name}`);
     
     // reset form
     setRegName('');
@@ -1278,6 +1279,32 @@ export default function CustomerDirectoryPage() {
                 {/* Left Column: General & Personal info */}
                 <div className="space-y-4 text-xs">
                   <h3 className="font-mono font-bold text-[10px] text-muted-foreground uppercase tracking-widest border-b border-border/40 pb-1">Account & Demographics</h3>
+                  
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Registration Role</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setRegRole('student')}
+                        className={cn(
+                          "py-2 rounded-xl text-xs font-bold uppercase border transition-all cursor-pointer text-center",
+                          regRole === 'student' ? "bg-primary/20 border-primary text-primary" : "border-border bg-white text-muted-foreground"
+                        )}
+                      >
+                        Student
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRegRole('instructor')}
+                        className={cn(
+                          "py-2 rounded-xl text-xs font-bold uppercase border transition-all cursor-pointer text-center",
+                          regRole === 'instructor' ? "bg-primary/20 border-primary text-primary" : "border-border bg-white text-muted-foreground"
+                        )}
+                      >
+                        Instructor
+                      </button>
+                    </div>
+                  </div>
                   
                   <div className="space-y-1.5">
                     <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Full Name <span className="text-destructive">*</span></label>

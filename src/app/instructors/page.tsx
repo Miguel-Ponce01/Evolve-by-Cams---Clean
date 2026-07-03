@@ -56,6 +56,9 @@ export default function InstructorsPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <h2 className="font-heading font-black text-lg text-foreground uppercase tracking-wide">{instructor.name}</h2>
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">
+                      @{instructor.id}evolve (Nickname / Affiliation)
+                    </span>
                     <span className="text-xs font-mono font-bold text-primary">{instructor.specialty}</span>
                   </div>
                   <a
@@ -68,7 +71,7 @@ export default function InstructorsPage() {
                   </a>
                 </div>
 
-                <p className="text-xs text-muted-foreground leading-relaxed flex-1">{instructor.bio}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed flex-1 text-left">{instructor.bio}</p>
 
                 {/* Rating stars & Students count row */}
                 <div className="flex items-center justify-between border-t border-b border-border/45 py-3 my-2">
@@ -93,24 +96,23 @@ export default function InstructorsPage() {
                   </div>
                 </div>
 
-                {/* Stats & Schedule */}
-                <div className="grid grid-cols-2 gap-2 text-muted-foreground border-b border-border/45 pb-3 mb-2">
-                  <div className="flex items-center gap-1.5 text-[10px] font-mono">
-                    <Users size={12} className="text-primary" />
-                    <span>{instructor.totalStudents.toLocaleString()} total</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-mono">
-                    <span>📅</span>
-                    <span>{getInstructorClasses(instructor.name)} this week</span>
+                {/* Course / Class Collection */}
+                <div className="space-y-1 bg-secondary/15 p-3 rounded-2xl border border-border/30 text-left">
+                  <span className="text-[9px] uppercase tracking-widest font-black text-muted-foreground">Course &amp; Class Collection</span>
+                  <div className="flex flex-wrap gap-1">
+                    <span className="px-2 py-0.5 rounded-md bg-white border border-border text-[9px] font-bold text-ink">Pole Fitness</span>
+                    <span className="px-2 py-0.5 rounded-md bg-white border border-border text-[9px] font-bold text-ink">Aerial Sling</span>
+                    <span className="px-2 py-0.5 rounded-md bg-white border border-border text-[9px] font-bold text-ink">Exole (Exotic Pole)</span>
+                    <span className="px-2 py-0.5 rounded-md bg-white border border-border text-[9px] font-bold text-ink">Sexy Chair</span>
                   </div>
                 </div>
 
-                {/* Custom Playlist Badge */}
+                {/* Playlist vibe */}
                 <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#edf7e7]/30 border border-[#edf7e7]/60 mb-4">
                   <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
                     <Music size={14} className="text-emerald-500 animate-pulse" />
                   </div>
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 text-left">
                     <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">Playlist vibe · {instructor.musicStyle}</p>
                     <p className="text-xs font-bold text-ink truncate">{instructor.playlist}</p>
                   </div>

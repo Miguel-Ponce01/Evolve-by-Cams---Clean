@@ -28,7 +28,8 @@ interface BookingContextType {
     customerEmail: string,
     customerPhone?: string,
     promoCode?: string,
-    handledBy?: string
+    handledBy?: string,
+    priceOverride?: number
   ) => { success: boolean; message: string; booking?: Booking };
 
   cancelBooking: (bookingId: string) => { success: boolean; message: string };
@@ -610,7 +611,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     customerEmail: string,
     customerPhone?: string,
     promoCode?:    string,
-    handledBy?:    string
+    handledBy?:    string,
+    priceOverride?: number
   ): { success: boolean; message: string; booking?: Booking } => {
     const cls = classes.find(c => c.id === classId);
     if (!cls) return { success: false, message: 'Class not found.' };
@@ -618,15 +620,15 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       return { success: false, message: 'This spot was just taken. Please select another.' };
     }
 
-    // ── Promo code discount ───────────────────────────────────────────────
-    let finalPrice = cls.price;
+    // ── Promo code discount & Price Overrides ───────────────────────────────
+    let finalPrice = priceOverride !== undefined ? priceOverride : cls.price;
     const appliedPromo = promoCode?.toUpperCase() === 'EVOLVE10' ? 'EVOLVE10' : undefined;
-    if (appliedPromo) {
+    if (appliedPromo && priceOverride === undefined) {
       finalPrice = cls.price * 0.9; // 10% off
     }
     const subtotal  = finalPrice;
-    const taxAmount = Math.round(subtotal * 0.08 * 100) / 100;
-    const total     = Math.round((subtotal + taxAmount) * 100) / 100;
+    const taxAmount = priceOverride !== undefined ? 0 : Math.round(subtotal * 0.08 * 100) / 100;
+    const total     = priceOverride !== undefined ? finalPrice : Math.round((subtotal + taxAmount) * 100) / 100;
 
     // ── Find or register customer ─────────────────────────────────────────
     let targetCustomer = customers.find(

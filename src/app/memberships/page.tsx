@@ -31,36 +31,36 @@ interface PackageItem {
 const PACKAGES: PackageItem[] = [
   {
     id: 'single',
-    title: 'Single Class Pass',
-    price: 600,
+    title: 'Single Class Pass (Group Class)',
+    price: 700,
     credits: 1,
-    perClass: '₱600/class',
-    desc: 'Perfect for walk-ins and trial sessions. Valid for all Pole, Aerial, Chair, and Yoga classes.',
+    perClass: '₱700/class',
+    desc: 'Valid for all Pole Group Classes (All Levels). Perfect for walk-ins and trial sessions.',
   },
   {
     id: 'five',
-    title: '5-Class Pass Pack',
-    price: 2800,
-    credits: 5,
-    perClass: '₱560/class',
-    desc: 'Great for weekly regulars. Valid for 90 days. Saves ₱200 compared to single passes.',
+    title: 'Davao Group Class Pass Pack',
+    price: 1000,
+    credits: 1,
+    perClass: '₱1,000/class',
+    desc: 'Evolve Davao Studio Group Class pass (Pole/Aerial Group Class All Levels).',
     popular: true,
   },
   {
     id: 'ten',
-    title: '10-Class Pass Pack',
-    price: 5000,
-    credits: 10,
-    perClass: '₱500/class',
-    desc: 'Our best value class pack. Valid for 180 days. Saves ₱1,000 compared to single passes.',
+    title: 'Private Class (Pole / Aerial / Exole / Acro / Sexy Chair)',
+    price: 1800,
+    credits: 1,
+    perClass: '₱1,800/hour',
+    desc: 'Personalized training, faster progress, and a stronger you. Gracious in the air or bold on the floor.',
   },
   {
     id: 'unlimited',
-    title: 'Unlimited Monthly Pass',
-    price: 7500,
-    credits: 999,
-    perClass: 'Subscription',
-    desc: 'Unlimited access to all Pole, Aerial, Chair & Yoga classes. Automatically renews monthly. Priority booking.',
+    title: 'Annual Membership Fee',
+    price: 1500,
+    credits: 0,
+    perClass: '₱1,500/year',
+    desc: 'Annual Membership registration fee to access packages and premium features.',
   },
 ];
 
@@ -76,6 +76,8 @@ export default function PackageSalesPage() {
   const [isProcessingCard, setIsProcessingCard] = useState(false);
   const [terminalStateMsg, setTerminalStateMsg] = useState('');
   const [selectedStaff, setSelectedStaff] = useState('Cams Rivera');
+  const [cashPercent, setCashPercent] = useState<number>(100);
+  const [walletPercent, setWalletPercent] = useState<number>(0);
 
   const filteredCustomers = useMemo(() => {
     if (!searchQuery) return [];
@@ -108,93 +110,49 @@ export default function PackageSalesPage() {
       return;
     }
 
-    if (paymentMethod === 'card') {
-      // Record a pending transaction immediately
-      const newTx = addTransaction({
-        type: 'membership',
-        customerName: client.name,
-        customerEmail: client.email,
-        customerPhone: client.phone,
-        description: `Purchase: ${selectedPack.title}`,
-        paymentMethod: 'card',
-        amount: selectedPack.price,
-        status: 'pending',
-        handledBy: selectedStaff,
-      });
+    const cashAmount = (selectedPack.price * cashPercent) / 100;
+    const walletAmount = (selectedPack.price * walletPercent) / 100;
 
-      setIsProcessingCard(true);
-      setErrorMsg('');
-      try {
-        const { StripeTerminalMock } = await import('@/lib/stripeTerminal');
-        const terminal = new StripeTerminalMock((state) => {
-          switch (state) {
-            case 'CONNECTING':
-              setTerminalStateMsg('Connecting to Bluetooth Reader...');
-              break;
-            case 'CONNECTED':
-              setTerminalStateMsg('Card Reader Connected.');
-              break;
-            case 'AWAITING_TAP':
-              setTerminalStateMsg('Tap, Insert, or Swipe Card...');
-              break;
-            case 'PROCESSING':
-              setTerminalStateMsg('Authorizing Transaction...');
-              break;
-            case 'SUCCESS':
-              setTerminalStateMsg('Authorized.');
-              break;
-            case 'FAILED':
-              setTerminalStateMsg('Payment Failed.');
-              break;
-            default:
-              setTerminalStateMsg('');
-          }
-        });
-
-        const payResult = await terminal.processPayment(selectedPack.price);
-        setIsProcessingCard(false);
-        setTerminalStateMsg('');
-
-        if (!payResult.success) {
-          setErrorMsg(payResult.message);
-          updateTransactionStatus(newTx.id, 'cancelled');
-          return;
-        }
-
-        // Successfully paid!
-        buyCreditsForCustomer(selectedCustomerId, selectedPack.id);
-        updateTransactionStatus(newTx.id, 'paid');
-        setToastMsg(`✓ Sold ${selectedPack.title} to ${client.name} for ₱${selectedPack.price.toFixed(2)} (CARD)`);
-
-      } catch (err: any) {
-        setIsProcessingCard(false);
-        setTerminalStateMsg('');
-        setErrorMsg(err.message || 'Payment reader failed.');
-        updateTransactionStatus(newTx.id, 'cancelled');
+    if (walletAmount > 0) {
+      // Wallet balance check (simulation)
+      const creditsNeeded = walletAmount / 250; // assuming 250 PHP per credit unit
+      if (client.credits < creditsNeeded && selectedPack.id !== 'unlimited') {
+        setErrorMsg(`Insufficient wallet credits. Client has ${client.credits} credits, but needs ${(creditsNeeded).toFixed(1)} credits to cover ₱${walletAmount.toFixed(2)}.`);
         return;
       }
-    } else {
-      // Cash payment
-      buyCreditsForCustomer(selectedCustomerId, selectedPack.id);
-      addTransaction({
-        type: 'membership',
-        customerName: client.name,
-        customerEmail: client.email,
-        customerPhone: client.phone,
-        description: `Purchase: ${selectedPack.title}`,
-        paymentMethod: 'cash',
-        amount: selectedPack.price,
-        status: 'paid',
-        handledBy: selectedStaff,
-      });
-      setToastMsg(`✓ Sold ${selectedPack.title} to ${client.name} for ₱${selectedPack.price.toFixed(2)} (CASH)`);
+      // Deduct client credits
+      if (selectedPack.id !== 'unlimited') {
+        client.credits = Math.max(0, client.credits - Math.floor(creditsNeeded));
+      }
     }
+
+    // Assign credits/tier for the availed pack
+    buyCreditsForCustomer(selectedCustomerId, selectedPack.id);
+
+    // Record transaction
+    const splitDetails = `Avail: ${selectedPack.title} (${cashPercent}% Paid via ${paymentMethod === 'cash' ? 'Cash' : 'Bank Transfer'}: ₱${cashAmount.toFixed(2)}, ${walletPercent}% Paid via Wallet Credit: ₱${walletAmount.toFixed(2)})`;
+    
+    addTransaction({
+      type: 'membership',
+      customerName: client.name,
+      customerEmail: client.email,
+      customerPhone: client.phone,
+      description: splitDetails,
+      paymentMethod: paymentMethod === 'cash' ? 'cash' : 'card', // mapped to cash or card
+      amount: cashAmount, // cash collected
+      status: 'paid',
+      handledBy: selectedStaff,
+    });
+
+    setToastMsg(`✓ Successfully availed ${selectedPack.title} for ${client.name}. ₱${cashAmount.toFixed(2)} (${paymentMethod === 'cash' ? 'Cash' : 'Bank Transfer'}) + ₱${walletAmount.toFixed(2)} (Wallet Credit)`);
 
     // Reset selections on success
     setSelectedPack(null);
     setSelectedCustomerId(null);
     setSearchQuery('');
     setPaymentMethod('cash');
+    setCashPercent(100);
+    setWalletPercent(0);
     setErrorMsg('');
 
     setTimeout(() => setToastMsg(''), 5000);
@@ -359,7 +317,7 @@ export default function PackageSalesPage() {
                       : "bg-primary hover:bg-primary-press text-on-primary"
                   )}
                 >
-                  <ShoppingBag size={13} /> Top Up
+                  <ShoppingBag size={13} /> Avail
                 </button>
               </div>
             </div>
@@ -374,7 +332,7 @@ export default function PackageSalesPage() {
               <div className="bg-card/40 border border-border/50 rounded-3xl text-center py-12 px-6">
                 <span className="text-4xl block mb-2">🛍️</span>
                 <h3 className="font-heading font-black text-lg uppercase">Select Service</h3>
-                <p className="text-sm text-muted-foreground mt-2">Click on "Top Up" on any catalog item on the left to begin the client checkout flow.</p>
+                <p className="text-sm text-muted-foreground mt-2">Click on "Avail" on any catalog item on the left to begin the client checkout flow.</p>
               </div>
 
               {/* Pre-Select Customer Panel */}
@@ -438,10 +396,10 @@ export default function PackageSalesPage() {
               </div>
             </div>
           ) : (
-            <div className="bg-card border border-border rounded-3xl p-5 space-y-5 animate-in slide-in-from-right-5">
+            <div className="bg-card border border-border rounded-3xl p-5 space-y-5 animate-in slide-in-from-right-5 bg-white">
               <div className="border-b border-border pb-3 flex justify-between items-center">
                 <div>
-                  <h3 className="font-heading font-black text-base uppercase">Sell Pass</h3>
+                  <h3 className="font-heading font-black text-base uppercase">Avail Pass</h3>
                   <p className="text-xs text-muted-foreground">Product: <span className="text-primary font-bold">{selectedPack.title}</span></p>
                 </div>
                 <button
@@ -587,7 +545,7 @@ export default function PackageSalesPage() {
                         : 'bg-background border-border text-muted-foreground hover:border-primary/50'
                     )}
                   >
-                    <CreditCard size={13} /> Card Reader
+                    <CreditCard size={13} /> Online / Bank Transfer
                   </button>
                 </div>
               </div>
@@ -614,11 +572,71 @@ export default function PackageSalesPage() {
                 </div>
               </div>
 
+              {/* Credit Wallet Split Control */}
+              <div className="space-y-3 p-4 bg-secondary/20 border border-border/60 rounded-2xl">
+                <div className="flex justify-between items-center">
+                  <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">Credit Wallet Adjustments</label>
+                  {activeCustomer && (
+                    <span className="text-[10px] font-bold text-primary">Available Credits: {activeCustomer.credits}</span>
+                  )}
+                </div>
+                
+                {/* Preset Splits */}
+                <div className="grid grid-cols-5 gap-1.5">
+                  {[
+                    { label: '100/0', cash: 100 },
+                    { label: '90/10', cash: 90 },
+                    { label: '70/30', cash: 70 },
+                    { label: '50/50', cash: 50 },
+                    { label: '30/70', cash: 30 }
+                  ].map((split) => (
+                    <button
+                      key={split.label}
+                      type="button"
+                      onClick={() => handleSplitChange(split.cash)}
+                      className={cn(
+                        "py-1 rounded-lg text-[9px] font-bold border transition-all cursor-pointer text-center",
+                        cashPercent === split.cash
+                          ? "bg-primary/20 border-primary text-primary"
+                          : "border-border bg-white text-muted-foreground"
+                      )}
+                    >
+                      {split.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Slider bar */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[9px] font-bold text-muted-foreground">
+                    <span>Cash/Bank: {cashPercent}%</span>
+                    <span>Wallet Credit: {walletPercent}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="10"
+                    value={cashPercent}
+                    onChange={(e) => handleSplitChange(Number(e.target.value))}
+                    className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
+                </div>
+              </div>
+
               {/* 4. Sales Details invoice */}
               <div className="bg-secondary/20 rounded-2xl p-4 text-xs space-y-2 font-mono">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Product Price:</span>
                   <span>₱{selectedPack.price.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-muted-foreground">Pay via {paymentMethod === 'cash' ? 'Cash' : 'Bank Transfer'} ({cashPercent}%):</span>
+                  <span className="font-bold">₱{((selectedPack.price * cashPercent) / 100).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-muted-foreground">Pay via Wallet Credits ({walletPercent}%):</span>
+                  <span className="font-bold">₱{((selectedPack.price * walletPercent) / 100).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Credits Assigned:</span>
@@ -633,13 +651,12 @@ export default function PackageSalesPage() {
               {/* 5. Checkout button */}
               <button
                 onClick={handleConfirmPurchase}
-                disabled={!selectedCustomerId || isProcessingCard}
+                disabled={!selectedCustomerId}
                 className={cn(
-                  "btn-primary-pill w-full text-center uppercase tracking-widest py-4 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-sans transition-all",
-                  isProcessingCard && "opacity-75 cursor-wait"
+                  "btn-primary-pill w-full text-center uppercase tracking-widest py-4 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-sans transition-all"
                 )}
               >
-                {isProcessingCard ? terminalStateMsg : "Confirm Sale & Assign Credits"}
+                Confirm Sale & Assign Credits
               </button>
             </div>
           )}

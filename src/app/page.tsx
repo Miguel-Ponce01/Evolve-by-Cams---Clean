@@ -106,17 +106,17 @@ export default function HomePage() {
       </section>
 
       {/* ── "WE ARE EVOLVE" SPLIT SECTION ── */}
-      <section className="border-y border-zinc-100 bg-[#EEF2FF]/60 py-20 px-6">
+      <section className="border-y border-zinc-100 bg-[#EEF2FF]/60 py-20 px-6 animate-fade-in">
         <div className="max-w-[1240px] mx-auto grid md:grid-cols-12 gap-12 items-center">
           
           {/* Left Column: Premium Photo */}
-          <div className="md:col-span-6 relative h-[450px] overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
+          <div className="md:col-span-6 relative h-[450px] overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 shadow-lg">
             <img 
               src="/images/dance_class.png" 
               alt="Evolve studio performance"
-              className="w-full h-full object-cover filter grayscale contrast-105"
+              className="w-full h-full object-cover filter grayscale contrast-105 transition-transform duration-1000 hover:scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
           </div>
 
           {/* Right Column: Evolve Description & Script Logo */}
@@ -125,7 +125,7 @@ export default function HomePage() {
             {/* Signature Logo SVG */}
             <div className="flex items-center gap-1 font-serif select-none">
               <span className="text-4xl font-light tracking-[0.25em] text-black">EVO</span>
-              <svg className="w-12 h-12 text-[#7c8cf2]" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg className="w-12 h-12 text-[#7c8cf2] animate-pulse" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M30,85 C45,65 55,35 60,15 C65,30 50,75 75,60 C80,55 70,80 50,85" strokeLinecap="round" />
                 <circle cx="60" cy="15" r="3" fill="currentColor" />
               </svg>
@@ -133,27 +133,33 @@ export default function HomePage() {
             </div>
 
             <h2 className="text-3xl md:text-5xl font-semibold font-serif text-black tracking-wide uppercase">
-              We Are Evolve
+              Discover the Art of Pole &amp; Aerial Fitness
             </h2>
 
-            <div className="space-y-4 text-zinc-650 font-medium text-sm sm:text-base leading-relaxed">
+            <div className="space-y-4 text-zinc-650 font-medium text-sm sm:text-base leading-relaxed text-left">
               <p>
-                Proudly home-grown in Davao City, Evolve has spent a decade nurturing a vibrant community where fitness, artistry, and women's empowerment come together.
+                Evolve Pole Fitness and Aerial Arts Studio was founded in May 2016 in Davao City by Ervy &ldquo;Tweetie&rdquo; Bullecer. What began as a small and humble pole fitness studio was built on a powerful belief that pole fitness can be empowering, joyful, and artistic, and that women of all ages, shapes, and sizes deserve a safe space to grow stronger and more confident through movement.
               </p>
               <p>
-                Over the years, we’ve helped countless women discover their strength, embrace their creativity, and build confidence through movement that challenges both the body and the mind.
+                From the beginning, Evolve was intentionally created as more than a fitness studio. It became a supportive and empowering community rooted in empathy, respect, acceptance, and encouragement. Over time, this environment naturally grew into what many students lovingly call their Happy Place.
               </p>
               <p>
-                As we open our newest branch in Cagayan de Oro, our mission remains the same: to create a welcoming space where every woman, regardless of age, shape, or experience, can feel strong, confident, and free through pole and aerial movement.
+                In its early years, Evolve focused on developing structured pole fitness programs that prioritized proper technique, safety, and sustainable progression. As the studio continued to grow, it expanded into aerial arts including silks, sling, and lyra hoop, while refining its teaching methods through hands-on experience and close student engagement.
+              </p>
+              <p>
+                To maintain consistency and safety across all classes, Evolve developed its own standardized instructor training, certification, and ranking systems. These systems were tested and strengthened through years of real-world studio operations.
+              </p>
+              <p>
+                Evolve&rsquo;s journey included both growth and challenge, reinforcing its commitment to safety, structure, empathy, and empowerment. Today, Evolve stands on a decade of lived experience and proven systems. Through franchising, its mission continues by bringing safe and high-quality pole fitness and aerial arts programs to new communities while preserving the heart and integrity of the Evolve experience.
               </p>
             </div>
 
             <div className="pt-4">
               <Link 
                 href="/about" 
-                className="inline-block py-2.5 px-8 rounded-full border border-zinc-300 hover:border-[#7c8cf2] text-zinc-800 hover:text-[#7c8cf2] font-black text-xs uppercase tracking-widest transition-all duration-300"
+                className="inline-block py-3 px-8 rounded-full bg-[#7c8cf2] hover:bg-[#6c7ef0] text-white font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-md active:scale-95"
               >
-                Read More
+                Read Our Story
               </Link>
             </div>
 
@@ -221,6 +227,52 @@ export default function HomePage() {
             ))}
           </div>
 
+        </div>
+      </section>
+
+      {/* ── FREQUENTLY ASKED QUESTIONS SECTION ── */}
+      <section className="py-20 px-6 bg-zinc-50 border-t border-zinc-100 animate-fade-in text-left">
+        <div className="max-w-[1240px] mx-auto grid md:grid-cols-12 gap-12">
+          {/* Left Column */}
+          <div className="md:col-span-5 space-y-4">
+            <h2 className="text-3xl md:text-5xl font-semibold font-serif text-black uppercase tracking-wide">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-xs text-zinc-500 font-semibold leading-relaxed">
+              Have more questions? We're happy to help! If anything isn't covered here, feel free to send us a message through the form below, Facebook, or Instagram.
+            </p>
+          </div>
+          
+          {/* Right Column */}
+          <div className="md:col-span-7 space-y-8 text-xs font-semibold">
+            <div className="space-y-2">
+              <span className="text-[10px] font-mono font-black text-[#7c8cf2] uppercase tracking-wider block">1 | Can I join even if I'm not strong or &ldquo;fit&rdquo; yet?</span>
+              <p className="text-zinc-650 leading-relaxed font-medium">
+                Absolutely. You don't need a certain body type or fitness level to start. Every journey begins somewhere, and our classes are designed to help you build strength gradually - not just physically, but mentally too. With consistent practice and guidance, you'll grow in confidence, resilience, and self-belief.
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <span className="text-[10px] font-mono font-black text-[#7c8cf2] uppercase tracking-wider block">2 | Is pole and aerial training safe?</span>
+              <p className="text-zinc-650 leading-relaxed font-medium">
+                Yes. Safety is a top priority at Evolve. All classes are guided by certified instructors who emphasize proper technique, controlled progress, and safe conditioning to help prevent injuries while supporting steady growth.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[10px] font-mono font-black text-[#7c8cf2] uppercase tracking-wider block">3 | What should I wear to class?</span>
+              <p className="text-zinc-650 leading-relaxed font-medium">
+                For pole classes, fitted shorts and a tank top or sports bra are recommended for better grip and movement. For aerial classes, leggings and a snug top work best. Comfort and mobility are key.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[10px] font-mono font-black text-[#7c8cf2] uppercase tracking-wider block">4 | What other important things should I know before attending?</span>
+              <p className="text-zinc-650 leading-relaxed font-medium">
+                We strictly allow a maximum of 5 minutes late entry to ensure everyone's safety and class flow. Warming up and stretching are a must, and dedicated time is allotted for proper preparation before every session. Please avoid using lotions or oils before class as they affect grip and safety. Always inform your instructor of any injuries or health concerns so we can adjust your training accordingly.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 

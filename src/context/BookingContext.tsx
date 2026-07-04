@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import type { FitnessClass, Booking, User, Customer, WaitlistEntry, SpotLock, PackType, Transaction } from '@/types';
+import type { FitnessClass, Booking, User, Customer, WaitlistEntry, SpotLock, PackType, Transaction, StudioEvent } from '@/types';
 import { SEED_CLASSES } from '@/lib/seedData';
 import { parseClassDateTime } from '@/lib/utils';
 import { useWebSockets, SocketMessage } from '@/hooks/useWebSockets';
@@ -82,6 +82,19 @@ interface BookingContextType {
   addClass: (classData: Omit<FitnessClass, 'id' | 'bookedSpots'>) => FitnessClass;
   updateClass: (classId: string, updates: Partial<Omit<FitnessClass, 'id' | 'bookedSpots'>>) => void;
   deleteClass: (classId: string) => { success: boolean; message: string };
+  events: StudioEvent[];
+  addEvent: (eventData: Omit<StudioEvent, 'id'>) => StudioEvent;
+  updateEvent: (eventId: string, updates: Partial<Omit<StudioEvent, 'id'>>) => void;
+  deleteEvent: (eventId: string) => { success: boolean; message: string };
+  testimonials: Testimonial[];
+  updateTestimonial: (index: number, updates: Partial<Testimonial>) => void;
+}
+
+export interface Testimonial {
+  name: string;
+  role: string;
+  text: string;
+  rating: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -219,6 +232,45 @@ function saveToStorage(key: string, value: unknown) {
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
 
+const SEED_EVENTS: StudioEvent[] = [
+  {
+    id: 'evt-001',
+    title: "Vertical Artistry Showcase 2026",
+    tag: "Showcase",
+    startTime: "2026-08-15T18:00:00.000Z",
+    endTime: "2026-08-15T21:00:00.000Z",
+    location: "Davao Studio (Main Hall)",
+    price: "₱750 / Ticket",
+    description: "Our annual theatrical studio showcase celebrating vertical movement. Experience original choreography performed by advanced students and certified coaches under professional stage lighting.",
+    instructorName: "Ervy Tweetie & Leadership Team",
+    spotsLeft: 12
+  },
+  {
+    id: 'evt-002',
+    title: "Aerial Hoop & Lyra Basics Intensive",
+    tag: "Workshop",
+    startTime: "2026-07-25T14:00:00.000Z",
+    endTime: "2026-07-25T17:00:00.000Z",
+    location: "Davao Studio (Aerial Sanctuary)",
+    price: "₱1,500 / Entry",
+    description: "A focused 3-hour technique masterclass designed to optimize grip, transitions, and mount structures on the hoop. Ideal for beginner to intermediate aerialists.",
+    instructorName: "Tweety Bullecer",
+    spotsLeft: 4
+  },
+  {
+    id: 'evt-003',
+    title: "Pole Drops & Dynamic Rebounds",
+    tag: "Masterclass",
+    startTime: "2026-09-05T16:00:00.000Z",
+    endTime: "2026-09-05T18:30:00.000Z",
+    location: "Davao Studio (Main Hall)",
+    price: "₱1,800 / Entry",
+    description: "An advanced masterclass focusing on high-velocity drop catches, dynamic flips, and rebound setups. Prerequisites: Solid handspring and inside leg hangs.",
+    instructorName: "Cams & Guest Instructors",
+    spotsLeft: 6
+  }
+];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PROVIDER
 // ─────────────────────────────────────────────────────────────────────────────
@@ -231,6 +283,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   const [waitlist,  setWaitlist]  = useState<WaitlistEntry[]>([]);
   const [spotLocks, setSpotLocks] = useState<SpotLock[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [events,       setEvents]       = useState<StudioEvent[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [hydrated,  setHydrated]  = useState(false);
 
   // ── WebSocket Terminal Syncing ──────────────────────────────────────────
@@ -385,6 +439,28 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    const savedEvents    = loadFromStorage<StudioEvent[]>('evolve_events', SEED_EVENTS);
+    const savedTestimonials = loadFromStorage<Testimonial[]>('evolve_testimonials', [
+      {
+        name: "Maria Santos",
+        role: "Member since 2021",
+        text: "Evolve is truly my Happy Place. I came in with zero upper body strength and constant self-doubt. The structure and certification of the coaches here helped me safely build physical strength and, more importantly, confidence I never knew I had.",
+        rating: 5
+      },
+      {
+        name: "Kassandra Ramos",
+        role: "Aerial Silks Enthusiast",
+        text: "The B&W studio aesthetic matches the focus and grace demanded by the aerial silks program. The coaches are incredibly safe, methodical, and certified. Joining the Evolve family completely transformed my fitness path.",
+        rating: 5
+      },
+      {
+        name: "Janine De Cruz",
+        role: "Pole Dance Student",
+        text: "If you are looking for a studio that values technique, safety, and encouragement equally, Evolve is it. No matter your shape or size, you are welcomed with open arms. The classes are empowering and extremely fun!",
+        rating: 5
+      }
+    ]);
+
     setUser(savedAdmin);
     setCustomers(savedCustomers);
     setBookings(activeBookings);
@@ -392,6 +468,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     setClasses(activeClasses);
     setSpotLocks(savedLocks);
     setTransactions(activeTransactions);
+    setEvents(savedEvents);
+    setTestimonials(savedTestimonials);
     setHydrated(true);
     registerPushNotifications();
   }, []);
@@ -404,6 +482,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => { if (hydrated) saveToStorage('evolve_classes',   classes);   }, [classes,   hydrated]);
   useEffect(() => { if (hydrated) saveToStorage('evolve_spot_locks', spotLocks); }, [spotLocks, hydrated]);
   useEffect(() => { if (hydrated) saveToStorage('evolve_transactions', transactions); }, [transactions, hydrated]);
+  useEffect(() => { if (hydrated) saveToStorage('evolve_events', events); }, [events, hydrated]);
+  useEffect(() => { if (hydrated) saveToStorage('evolve_testimonials', testimonials); }, [testimonials, hydrated]);
 
   // ── Live Real-Time Multi-Terminal Sync (simulated via storage events) ───
   useEffect(() => {
@@ -422,6 +502,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
           setCustomers(loadFromStorage<Customer[]>('evolve_customers', defaultCustomers));
         } else if (e.key === 'evolve_transactions') {
           setTransactions(loadFromStorage<Transaction[]>('evolve_transactions', []));
+        } else if (e.key === 'evolve_events') {
+          setEvents(loadFromStorage<StudioEvent[]>('evolve_events', SEED_EVENTS));
         }
       } catch (err) {
         console.error('Real-time synchronization error:', err);
@@ -1112,6 +1194,35 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     });
   }, [sendMessage]);
 
+  // ── Events CRUD Functions ──────────────────────────────────────────────
+  const addEvent = useCallback((eventData: Omit<StudioEvent, 'id'>) => {
+    const newEvent: StudioEvent = {
+      ...eventData,
+      id: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    };
+    setEvents(prev => [...prev, newEvent]);
+    return newEvent;
+  }, []);
+
+  const updateEvent = useCallback((eventId: string, updates: Partial<Omit<StudioEvent, 'id'>>) => {
+    setEvents(prev => prev.map(evt => evt.id === eventId ? { ...evt, ...updates } : evt));
+  }, []);
+
+  const deleteEvent = useCallback((eventId: string) => {
+    setEvents(prev => prev.filter(evt => evt.id !== eventId));
+    return { success: true, message: 'Event deleted successfully.' };
+  }, []);
+
+  const updateTestimonial = useCallback((index: number, updates: Partial<Testimonial>) => {
+    setTestimonials(prev => {
+      const copy = [...prev];
+      if (copy[index]) {
+        copy[index] = { ...copy[index], ...updates };
+      }
+      return copy;
+    });
+  }, []);
+
   // ─────────────────────────────────────────────────────────────────────────
   // RENDER
   // ─────────────────────────────────────────────────────────────────────────
@@ -1129,6 +1240,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       lockSpot, unlockSpot,
       addTransaction, updateTransactionStatus,
       addClass, updateClass, deleteClass,
+      events, addEvent, updateEvent, deleteEvent,
+      testimonials, updateTestimonial,
     }}>
       {children}
     </BookingContext.Provider>

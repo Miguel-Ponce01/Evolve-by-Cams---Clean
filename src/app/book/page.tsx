@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useBooking } from '@/context/BookingContext';
 import { getManilaDate } from '@/lib/business-hours';
 import { Badge } from '@/components/ui/badge';
+import { Footer } from '@/components/layout/Footer';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -64,9 +65,9 @@ export default function BookingCalendarPage() {
       
       let categoryMatch = true;
       if (selectedCategory === 'Strength') {
-        categoryMatch = cls.type === 'Reformer' || cls.type === 'Sculpt';
+        categoryMatch = cls.type === 'Pole Fitness' || cls.type === 'Exole' || cls.type === 'Sexy Chair';
       } else if (selectedCategory === 'Conditioning') {
-        categoryMatch = cls.type === 'Mat Pilates';
+        categoryMatch = cls.type === 'Aerial Sling' || cls.type === 'Aerial Sling Kids';
       } else if (selectedCategory === 'Community') {
         categoryMatch = cls.type === 'Yoga';
       }
@@ -84,27 +85,27 @@ export default function BookingCalendarPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden font-sans pb-16 lg:pb-0">
+    <div className="min-h-screen bg-[#0A0A0A] text-[#F5F5F3] overflow-x-hidden font-sans pb-16 lg:pb-0">
       
       {/* Page Header Banner */}
       <section className="container mx-auto px-6 py-12 max-w-[1240px] text-center">
-        <h1 className="text-5xl sm:text-7xl font-semibold font-serif tracking-[0.05em] uppercase text-black leading-none">
-          Book a <span className="text-[#7c8cf2]">Session</span>
+        <h1 className="text-5xl sm:text-7xl font-semibold font-serif tracking-[0.05em] uppercase text-white leading-none">
+          Book a <span className="text-[#C9A961]">Session</span>
         </h1>
-        <div className="w-20 h-[1px] bg-zinc-350 mx-auto mt-6" />
+        <div className="w-20 h-[1px] bg-zinc-800 mx-auto mt-6" />
       </section>
 
       {/* Category Grid Section */}
-      <section className="container mx-auto px-6 pb-12 max-w-[1240px] grid md:grid-cols-3 gap-0 border-y border-zinc-200">
+      <section className="container mx-auto px-6 pb-12 max-w-[1240px] grid md:grid-cols-3 gap-0 border-y border-zinc-900">
         
         {/* Card 1: Community Classes */}
-        <div className="border-r border-zinc-200 p-8 flex flex-col justify-between min-h-[380px] bg-white hover:bg-zinc-50 transition-colors">
+        <div className="border-r border-zinc-900 p-8 flex flex-col justify-between min-h-[380px] bg-black hover:bg-zinc-900/40 transition-colors">
           <div className="space-y-6">
-            <h2 className="text-3xl font-semibold font-serif text-black uppercase tracking-wide">Community Classes</h2>
-            <div className="space-y-3 font-semibold text-xs border-y border-zinc-150 py-4 text-zinc-500">
+            <h2 className="text-3xl font-semibold font-serif text-white uppercase tracking-wide">Community Classes</h2>
+            <div className="space-y-3 font-semibold text-xs border-y border-zinc-900 py-4 text-zinc-400">
               <p>Every day on the hour</p>
             </div>
-            <p className="text-xs font-semibold leading-relaxed text-zinc-600">
+            <p className="text-xs font-semibold leading-relaxed text-zinc-400">
               Experience the power of collective effort with our custom Workout of the Day. Push your limits alongside like-minded individuals.
             </p>
           </div>
@@ -113,8 +114,8 @@ export default function BookingCalendarPage() {
             className={cn(
               "w-full py-3.5 rounded-full font-black text-[10px] uppercase tracking-widest transition-all cursor-pointer",
               selectedCategory === 'Community'
-                ? "bg-black text-white"
-                : "bg-[#7c8cf2] text-white hover:bg-[#6c7ef0]"
+                ? "bg-white text-black"
+                : "bg-[#C9A961] text-black hover:bg-[#b09352]"
             )}
           >
             {selectedCategory === 'Community' ? 'Viewing Community' : 'Reserve Your Spot'}
@@ -122,14 +123,14 @@ export default function BookingCalendarPage() {
         </div>
 
         {/* Card 2: Conditioning */}
-        <div className="border-r border-zinc-200 p-8 flex flex-col justify-between min-h-[380px] bg-white hover:bg-zinc-50 transition-colors">
+        <div className="border-r border-zinc-900 p-8 flex flex-col justify-between min-h-[380px] bg-black hover:bg-zinc-900/40 transition-colors">
           <div className="space-y-6">
-            <h2 className="text-3xl font-semibold font-serif text-black uppercase tracking-wide">Conditioning</h2>
-            <div className="space-y-3 font-semibold text-xs border-y border-zinc-150 py-4 text-zinc-500">
+            <h2 className="text-3xl font-semibold font-serif text-white uppercase tracking-wide">Conditioning</h2>
+            <div className="space-y-3 font-semibold text-xs border-y border-zinc-900 py-4 text-zinc-400">
               <p>Weekdays at 8AM</p>
               <p>Weekends and Holidays at 10AM</p>
             </div>
-            <p className="text-xs font-semibold leading-relaxed text-zinc-600">
+            <p className="text-xs font-semibold leading-relaxed text-zinc-400">
               Push your limits with high-intensity workouts that challenge your cardiovascular endurance and build functional fitness.
             </p>
           </div>
@@ -138,8 +139,8 @@ export default function BookingCalendarPage() {
             className={cn(
               "w-full py-3.5 rounded-full font-black text-[10px] uppercase tracking-widest transition-all cursor-pointer",
               selectedCategory === 'Conditioning'
-                ? "bg-black text-white"
-                : "bg-[#7c8cf2] text-white hover:bg-[#6c7ef0]"
+                ? "bg-white text-black"
+                : "bg-[#C9A961] text-black hover:bg-[#b09352]"
             )}
           >
             {selectedCategory === 'Conditioning' ? 'Viewing Conditioning' : 'Reserve Your Spot'}
@@ -147,14 +148,14 @@ export default function BookingCalendarPage() {
         </div>
 
         {/* Card 3: Strength */}
-        <div className="p-8 flex flex-col justify-between min-h-[380px] bg-white hover:bg-zinc-50 transition-colors">
+        <div className="p-8 flex flex-col justify-between min-h-[380px] bg-black hover:bg-zinc-900/40 transition-colors">
           <div className="space-y-6">
-            <h2 className="text-3xl font-semibold font-serif text-black uppercase tracking-wide">Strength</h2>
-            <div className="space-y-3 font-semibold text-xs border-y border-zinc-150 py-4 text-zinc-500">
+            <h2 className="text-3xl font-semibold font-serif text-white uppercase tracking-wide">Strength</h2>
+            <div className="space-y-3 font-semibold text-xs border-y border-zinc-900 py-4 text-zinc-400">
               <p>Weekdays at 6AM</p>
               <p>Weekends and Holidays at 8AM</p>
             </div>
-            <p className="text-xs font-semibold leading-relaxed text-zinc-600">
+            <p className="text-xs font-semibold leading-relaxed text-zinc-400">
               Build a foundation of raw power with our comprehensive weightlifting and strength training programs.
             </p>
           </div>
@@ -163,8 +164,8 @@ export default function BookingCalendarPage() {
             className={cn(
               "w-full py-3.5 rounded-full font-black text-[10px] uppercase tracking-widest transition-all cursor-pointer",
               selectedCategory === 'Strength'
-                ? "bg-black text-white"
-                : "bg-[#7c8cf2] text-white hover:bg-[#6c7ef0]"
+                ? "bg-white text-black"
+                : "bg-[#C9A961] text-black hover:bg-[#b09352]"
             )}
           >
             {selectedCategory === 'Strength' ? 'Viewing Strength' : 'Reserve Your Spot'}
@@ -174,17 +175,17 @@ export default function BookingCalendarPage() {
       </section>
 
       {/* Evolve Personal Training Block */}
-      <section className="bg-[#EEF2FF] py-16 px-6 text-center space-y-4 border-b border-zinc-200">
-        <h2 className="text-3xl font-semibold font-serif tracking-wide uppercase text-black">
+      <section className="bg-[#111111] py-16 px-6 text-center space-y-4 border-b border-zinc-900">
+        <h2 className="text-3xl font-semibold font-serif tracking-wide uppercase text-white">
           Evolve Personal Training
         </h2>
-        <p className="text-xs sm:text-sm max-w-xl mx-auto font-medium leading-relaxed text-zinc-650">
+        <p className="text-xs sm:text-sm max-w-xl mx-auto font-medium leading-relaxed text-zinc-400">
           Receive personalized guidance and tailored programs designed to unlock your individual fitness potential. Our expert coaches will guide you every step of the way.
         </p>
         <div className="pt-2">
           <button 
             onClick={() => setShowPersonalTrainingModal(true)}
-            className="inline-block bg-[#7c8cf2] hover:bg-[#6c7ef0] text-white px-8 py-3.5 rounded-full font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-md cursor-pointer"
+            className="inline-block bg-[#C9A961] hover:bg-[#b09352] text-black px-8 py-3.5 rounded-sm font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-md cursor-pointer"
           >
             Reserve Your Spot
           </button>
@@ -195,14 +196,14 @@ export default function BookingCalendarPage() {
       <section ref={scheduleSectionRef} className="container mx-auto px-6 py-16 max-w-[1240px] space-y-8 scroll-mt-24">
         
         {/* Section Title & Filter Summary */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-900 pb-4">
           <div className="space-y-1">
-            <h3 className="text-xl font-semibold font-serif uppercase tracking-wide text-black flex items-center gap-2">
-              <CalendarIcon className="text-[#7c8cf2]" size={20} />
+            <h3 className="text-xl font-semibold font-serif uppercase tracking-wide text-white flex items-center gap-2">
+              <CalendarIcon className="text-[#C9A961]" size={20} />
               {selectedDayInfo ? `${selectedDayInfo.dayName}, ${formatDate(selectedDate)}` : 'Select Date'}
             </h3>
-            <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">
-              Selected Category: <span className="text-[#7c8cf2]">{selectedCategory === 'All' ? 'All Classes' : selectedCategory}</span>
+            <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wider">
+              Selected Category: <span className="text-[#C9A961]">{selectedCategory === 'All' ? 'All Classes' : selectedCategory}</span>
             </p>
           </div>
 
@@ -210,7 +211,7 @@ export default function BookingCalendarPage() {
           {selectedCategory !== 'All' && (
             <button 
               onClick={() => setSelectedCategory('All')}
-              className="text-xs font-black uppercase tracking-wider text-[#7c8cf2] hover:text-[#6c7ef0] hover:underline cursor-pointer"
+              className="text-xs font-black uppercase tracking-wider text-[#C9A961] hover:text-[#b09352] hover:underline cursor-pointer"
             >
               Clear Category Filter [Show All]
             </button>
@@ -218,19 +219,19 @@ export default function BookingCalendarPage() {
         </div>
 
         {/* Date Selector Carousel */}
-        <div className="bg-zinc-50 border border-zinc-200 p-4 rounded-xl">
+        <div className="bg-[#0F0F0F] border border-zinc-900 p-4 rounded-xl">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
             {calendarDays.map(day => (
               <button
                 key={day.dateStr}
                 onClick={() => setSelectedDate(day.dateStr)}
                 className={cn(
-                  "flex-1 min-w-[85px] py-3.5 px-2 rounded-lg border transition-all duration-300 flex flex-col items-center gap-1 bg-white cursor-pointer",
+                  "flex-1 min-w-[85px] py-3.5 px-2 rounded-lg border transition-all duration-300 flex flex-col items-center gap-1 bg-black cursor-pointer",
                   day.isTuesday
-                    ? "border-dashed border-zinc-200 opacity-40 cursor-not-allowed text-zinc-400"
+                    ? "border-dashed border-zinc-900 opacity-30 cursor-not-allowed text-zinc-500"
                     : selectedDate === day.dateStr
-                    ? "border-[#7c8cf2] bg-[#7c8cf2]/10 text-[#7c8cf2] shadow-sm"
-                    : "border-zinc-200 hover:border-zinc-300 text-zinc-650"
+                    ? "border-[#C9A961] bg-[#C9A961]/10 text-[#C9A961] shadow-sm"
+                    : "border-zinc-900 hover:border-zinc-800 text-zinc-400"
                 )}
                 disabled={day.isTuesday}
               >
@@ -250,17 +251,17 @@ export default function BookingCalendarPage() {
 
         {/* Locked Tuesdays Message */}
         {selectedDayInfo?.isTuesday ? (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-10 text-center space-y-4 max-w-lg mx-auto">
+          <div className="bg-red-950/20 border border-red-900/40 rounded-2xl p-10 text-center space-y-4 max-w-lg mx-auto">
             <Lock className="text-red-500 mx-auto" size={40} />
-            <h4 className="text-lg font-bold text-red-500 uppercase tracking-wide">Tuesday Lockout Active</h4>
-            <p className="text-xs text-zinc-600 leading-relaxed font-semibold">
+            <h4 className="text-lg font-bold text-red-400 uppercase tracking-wide">Tuesday Lockout Active</h4>
+            <p className="text-xs text-zinc-400 leading-relaxed font-semibold">
               Evolve Studio is closed every Tuesday. No class scheduling, front-desk shifts, or client bookings are permitted to be recorded for Tuesday dates. Please select another day.
             </p>
           </div>
         ) : filteredClasses.length === 0 ? (
-          <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-12 text-center text-zinc-500">
-            <Clock size={36} className="mx-auto mb-3 text-zinc-400" />
-            <p className="text-sm font-semibold uppercase tracking-wider text-black">No classes scheduled matching your criteria.</p>
+          <div className="bg-[#0F0F0F] border border-zinc-900 rounded-2xl p-12 text-center text-zinc-400">
+            <Clock size={36} className="mx-auto mb-3 text-zinc-500" />
+            <p className="text-sm font-semibold uppercase tracking-wider text-white">No classes scheduled matching your criteria.</p>
             <p className="text-xs text-zinc-500 mt-1 font-semibold">Please select a different date or clear your category filter.</p>
           </div>
         ) : (
@@ -272,44 +273,44 @@ export default function BookingCalendarPage() {
               return (
                 <div 
                   key={cls.id} 
-                  className="bg-white border border-zinc-200 rounded-xl p-6 flex flex-col justify-between hover:border-[#7c8cf2] transition-all duration-300 group hover:shadow-md hover:shadow-[#7c8cf2]/5"
+                  className="bg-black border border-zinc-900 rounded-xl p-6 flex flex-col justify-between hover:border-[#C9A961] transition-all duration-300 group hover:shadow-md hover:shadow-[#C9A961]/5"
                 >
                   <div className="space-y-4">
                     {/* Top Badges */}
                     <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="border-zinc-200 text-zinc-550 text-[9px] font-black tracking-widest uppercase bg-zinc-50">
+                      <Badge variant="outline" className="border-zinc-900 text-zinc-400 text-[9px] font-black tracking-widest uppercase bg-zinc-950">
                         {cls.type}
                       </Badge>
                       {isFull ? (
-                        <Badge className="bg-red-50 border border-red-200 text-red-500 text-[8px] font-black uppercase">
+                        <Badge className="bg-red-950/20 border border-red-900/45 text-red-400 text-[8px] font-black uppercase">
                           Waitlist Only
                         </Badge>
                       ) : (
-                        <Badge className="bg-[#EEF2FF] border border-[#e0e7ff] text-[#7c8cf2] text-[8px] font-black uppercase">
+                        <Badge className="bg-[#C9A961]/10 border border-[#C9A961]/20 text-[#C9A961] text-[8px] font-black uppercase">
                           {spotsRemaining} Spots Left
                         </Badge>
                       )}
                     </div>
 
                     {/* Title & Instructor */}
-                    <div>
-                      <h4 className="text-lg font-bold text-black group-hover:text-[#7c8cf2] transition-colors duration-300 uppercase tracking-tight font-serif">
+                    <div className="text-left">
+                      <h4 className="text-lg font-bold text-white group-hover:text-[#C9A961] transition-colors duration-300 uppercase tracking-tight font-serif">
                         {cls.title}
                       </h4>
-                      <p className="text-xs text-zinc-500 mt-1 flex items-center gap-1.5 font-semibold">
-                        <span className="w-1.5 h-1.5 rounded-full bg-zinc-300" />
+                      <p className="text-xs text-zinc-400 mt-1 flex items-center gap-1.5 font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-zinc-700" />
                         Led by {cls.instructor.name}
                       </p>
                     </div>
 
                     {/* Specs */}
-                    <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-zinc-500 pt-2 border-t border-zinc-150">
+                    <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-zinc-400 pt-2 border-t border-zinc-900 text-left">
                       <div className="flex items-center gap-1">
-                        <Clock size={12} className="text-zinc-400" />
+                        <Clock size={12} className="text-zinc-550" />
                         <span>{cls.time}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Users size={12} className="text-zinc-400" />
+                        <Users size={12} className="text-zinc-550" />
                         <span>Capacity: {cls.totalSpots}</span>
                       </div>
                     </div>
@@ -322,8 +323,8 @@ export default function BookingCalendarPage() {
                       className={cn(
                         "w-full py-3 rounded-full flex items-center justify-center gap-1 text-[10px] font-black uppercase tracking-widest transition-all",
                         isFull 
-                          ? "bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-200"
-                          : "bg-[#7c8cf2] hover:bg-[#6c7ef0] text-white shadow-xs"
+                          ? "bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800"
+                          : "bg-[#C9A961] hover:bg-[#b09352] text-black shadow-xs"
                       )}
                     >
                       <span>{isFull ? 'Join Waitlist' : 'Select Mat Spot'}</span>
@@ -340,40 +341,40 @@ export default function BookingCalendarPage() {
 
       {/* Personal Training Inquiry Modal */}
       {showPersonalTrainingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white border border-zinc-200 rounded-2xl max-w-md w-full p-8 space-y-6 shadow-2xl animate-scale-up">
-            <div className="flex items-center justify-between border-b border-zinc-150 pb-3">
-              <h3 className="text-lg font-semibold font-serif uppercase tracking-wide text-black flex items-center gap-2">
-                <MessageCircle className="text-[#7c8cf2]" size={20} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-[#0F0F0F] border border-zinc-900 rounded-2xl max-w-md w-full p-8 space-y-6 shadow-2xl animate-scale-up text-left">
+            <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
+              <h3 className="text-lg font-semibold font-serif uppercase tracking-wide text-white flex items-center gap-2">
+                <MessageCircle className="text-[#C9A961]" size={20} />
                 PT Inquiry
               </h3>
               <button 
                 onClick={() => setShowPersonalTrainingModal(false)}
-                className="text-zinc-450 hover:text-black font-black uppercase text-xs cursor-pointer"
+                className="text-zinc-500 hover:text-white font-black uppercase text-xs cursor-pointer"
               >
                 Close
               </button>
             </div>
             
-            <p className="text-xs text-zinc-500 font-semibold leading-relaxed">
+            <p className="text-xs text-zinc-400 font-semibold leading-relaxed">
               Fill out this inquiry to schedule a 1-on-1 personal training session. Our coaches will review your request and reach out within 24 hours.
             </p>
             
             <form className="space-y-4 text-xs font-semibold" onSubmit={(e) => { e.preventDefault(); alert('Inquiry sent successfully!'); setShowPersonalTrainingModal(false); }}>
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-black text-zinc-500">Full Name</label>
-                <input required type="text" className="w-full p-3 bg-zinc-50 border border-zinc-200 text-black rounded-md focus:outline-none focus:border-[#7c8cf2]" />
+                <label className="text-[10px] uppercase font-black text-zinc-450">Full Name</label>
+                <input required type="text" className="w-full p-3 bg-black border border-zinc-900 text-white rounded-md focus:outline-none focus:border-[#C9A961]" />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-black text-zinc-500">Contact Email</label>
-                <input required type="email" className="w-full p-3 bg-zinc-50 border border-zinc-200 text-black rounded-md focus:outline-none focus:border-[#7c8cf2]" />
+                <label className="text-[10px] uppercase font-black text-zinc-450">Contact Email</label>
+                <input required type="email" className="w-full p-3 bg-black border border-zinc-900 text-white rounded-md focus:outline-none focus:border-[#C9A961]" />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-black text-zinc-500">Preferred Time Slot</label>
-                <input required type="text" placeholder="e.g. Weekdays 6:00 AM" className="w-full p-3 bg-zinc-50 border border-zinc-200 text-black rounded-md focus:outline-none focus:border-[#7c8cf2]" />
+                <label className="text-[10px] uppercase font-black text-zinc-450">Preferred Time Slot</label>
+                <input required type="text" placeholder="e.g. Weekdays 6:00 AM" className="w-full p-3 bg-black border border-zinc-900 text-white rounded-md focus:outline-none focus:border-[#C9A961]" />
               </div>
               
-              <button type="submit" className="w-full py-3.5 bg-[#7c8cf2] text-white rounded-md font-black uppercase tracking-widest text-[10px] mt-4 cursor-pointer hover:bg-[#6c7ef0] active:scale-[0.98]">
+              <button type="submit" className="w-full py-3.5 bg-[#C9A961] text-black rounded-md font-black uppercase tracking-widest text-[10px] mt-4 cursor-pointer hover:bg-[#b09352] active:scale-[0.98]">
                 Submit PT Request
               </button>
             </form>
@@ -382,46 +383,7 @@ export default function BookingCalendarPage() {
       )}
 
       {/* Footer */}
-      <footer className="bg-[#121212] border-t border-zinc-900 py-16 px-6 text-zinc-400 relative z-10">
-        <div className="max-w-[1240px] mx-auto space-y-12">
-          
-          {/* Logo row */}
-          <div className="flex flex-col items-start gap-1 select-none">
-            <span className="text-3xl font-light tracking-[0.25em] font-serif text-white uppercase leading-none">
-              EVOLVE
-            </span>
-            <span className="text-[9px] text-[#7c8cf2] tracking-widest uppercase font-mono font-bold mt-1">
-              Pole Fitness &amp; Aerial Arts
-            </span>
-          </div>
-
-          {/* Grid details */}
-          <div className="grid sm:grid-cols-3 gap-8 pt-8 border-t border-zinc-900 text-xs font-semibold">
-            <div className="space-y-3">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#7c8cf2] block">Branches &amp; Contact</span>
-              <p className="text-zinc-300">Davao Studio: 2F, Mabini Commercial Complex, Mabini St, Davao City</p>
-              <p className="text-zinc-300">Cagayan de Oro Studio: 3F, Corner Capistrano-Gomez Sts, CDO</p>
-              <p className="text-zinc-300">Email: info@evolvepolefitness.com</p>
-            </div>
-            <div className="space-y-3">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#7c8cf2] block">Opening Hours</span>
-              <div className="space-y-1 text-zinc-300">
-                <p>MON - FRI: &nbsp; &nbsp; &nbsp; 7:00 - 21:00</p>
-                <p>SATURDAYS: &nbsp; &nbsp; 8:00 - 18:00</p>
-                <p>SUNDAYS: &nbsp; &nbsp; &nbsp; CLOSED</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#7c8cf2] block">Social</span>
-              <div className="flex flex-col gap-1.5 text-zinc-300">
-                <a href="https://instagram.com/evolvepolefitness" target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-white">Instagram</a>
-                <a href="https://facebook.com/evolvepolefitness" target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-white">Facebook</a>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </footer>
+      <Footer />
 
     </div>
   );

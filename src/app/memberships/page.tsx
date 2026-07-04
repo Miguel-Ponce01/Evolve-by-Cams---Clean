@@ -79,6 +79,20 @@ export default function PackageSalesPage() {
   const [cashPercent, setCashPercent] = useState<number>(100);
   const [walletPercent, setWalletPercent] = useState<number>(0);
 
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passError, setPassError] = useState('');
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === 'admin' || passwordInput === 'evolve10') {
+      setIsUnlocked(true);
+      setPassError('');
+    } else {
+      setPassError('Access denied: Invalid code.');
+    }
+  };
+
   const filteredCustomers = useMemo(() => {
     if (!searchQuery) return [];
     return customers.filter(c =>
@@ -163,6 +177,49 @@ export default function PackageSalesPage() {
   const themeTextMuted = isDarkMode ? "text-zinc-400" : "text-zinc-500";
   const themeBorderColor = isDarkMode ? "border-zinc-800" : "border-zinc-200";
   const themeInputBg = isDarkMode ? "bg-black border-zinc-800 text-white" : "bg-white border-zinc-200 text-black";
+
+  if (!isUnlocked) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] text-[#F5F5F3] flex flex-col justify-center items-center px-6 relative z-10 font-sans">
+        <div className="max-w-[400px] w-full bg-[#121212] border border-zinc-900 rounded-2xl p-8 space-y-6 text-left shadow-2xl">
+          <div className="text-center space-y-2">
+            <span className="text-[10px] uppercase font-mono tracking-widest text-[#C9A961] font-bold">Secure Access Portal</span>
+            <h1 className="text-3xl font-serif font-light uppercase tracking-wider text-white">Evolve Staff</h1>
+            <p className="text-xs text-zinc-500">Please authenticate to access the Package Sales &amp; Membership desk.</p>
+          </div>
+          {passError && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold rounded-md">
+              {passError}
+            </div>
+          )}
+          <form onSubmit={handleLoginSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-black block">Staff PIN / Code</label>
+              <input
+                required
+                type="password"
+                placeholder="••••"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                className="w-full bg-[#1C1C1C] border border-zinc-800 text-sm text-center tracking-widest text-white px-3 py-3 focus:outline-none focus:border-[#C9A961] rounded-sm"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full py-3 bg-[#C9A961] hover:bg-[#b09352] text-black text-xs font-black uppercase tracking-widest rounded-sm transition-all cursor-pointer"
+            >
+              Unlock Access
+            </button>
+            <div className="text-center pt-2">
+              <Link href="/" className="text-xs text-zinc-500 hover:text-white uppercase tracking-wider font-bold">
+                &larr; Back to Public Page
+              </Link>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen transition-colors duration-300 pb-16 relative text-left ${themeBg}`}>

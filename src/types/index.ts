@@ -134,3 +134,16 @@ export interface DailyStats {
   creditsRedeemed: number;      // credit-method bookings today
   cancellations: number;        // cancellations logged today
 }
+
+export interface StudioEvent {
+  id: string;
+  title: string;
+  description?: string;
+  startTime: string; // ISO string
+  endTime: string; // ISO string
+  tag: string;
+  spotsLeft: number;
+  price: string;
+  location: string;
+  instructorName?: string;
+}

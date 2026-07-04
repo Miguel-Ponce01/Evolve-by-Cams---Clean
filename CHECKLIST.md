@@ -1,6 +1,6 @@
 # Evolve Studio POS & Booking — Master Improvement Checklist (v2)
 
-> Last updated: 2026-06-30
+> Last updated: 2026-07-04
 > Tracking Evolve Studio Next.js 15, Tailwind, Supabase, and PayMongo dark-mode transition.
 
 ---
@@ -22,6 +22,13 @@
 - [x] **Client Dashboard (`src/app/dashboard/page.tsx`)** — View personal booking history, wallet credits balance, and simulated PayMongo top-ups.
 - [x] **Admin Portal (`src/app/portal/page.tsx`)** — Command center containing staff credit overrides form, realtime terminal list, and live activity log ticker.
 - [x] **Codebase Cleanup** — Excluded Supabase functions from TS config and deleted duplicate navigation components.
+- [x] **Supabase SSR Helpers & API Check-in** — Configured Supabase SSR client/server utilities, middleware, and a dedicated API check-in route (`src/app/api/checkin/route.ts`).
+- [x] **Supabase Auth Trigger** — Added a database trigger (`0009_auth_trigger.sql`) that automatically synchronizes and creates a user profile on signup.
+- [x] **Modular Migrations** — Refactored DB migration scripts into discrete, modular files mapping profiles, classes, bookings, booking policies, credit ledgers, and helper functions.
+- [x] **Premium Client Booking Flow** — Rebuilt `BookingTerminal.tsx` with dynamic step indicators ("Schedule", "Details", "Confirm", "Booked"), real-time rig point mapping, and database transaction booking validations.
+- [x] **Aesthetics & Theme Config** — Integrated custom black/white/gray theme config toggle alongside original Sunset gradient, updated class catalog, and optimized membership page layout.
+- [x] **Premium Navbar Retheme** — Upgraded the global header navigation with animated active-page underlines, dark dropdown menus, and gold mobile notifications dot.
+- [x] **About Us & Home Pages** — Designed responsive homepage hero carousel, a dedicated class list catalog module, and an About Us page featuring 5 high-fidelity Evolve studio photos.
 
 ---
 

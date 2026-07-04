@@ -59,18 +59,18 @@
   --card-foreground: #121212;
   --popover: #ffffff;
   --popover-foreground: #121212;
-  --primary: #7c8cf2; /* Pastel Blue */
+  --primary: #C9A961; /* Evolve Gold */
   --primary-foreground: #ffffff;
-  --secondary: #EEF2FF; /* Light Blue-White */
+  --secondary: #1E1E1E; /* Charcoal */
   --secondary-foreground: #121212;
   --muted: #f3f4f6;
   --muted-foreground: #4b5563;
-  --accent: #6c7ef0; /* Periwinkle Blue */
+  --accent: #b09352; /* Muted Gold */
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --border: #e5e7eb;
   --input: #ffffff;
-  --ring: #7c8cf2;
+  --ring: #C9A961;
   --radius: 12px;
   --bg-image: none;
 }
@@ -84,13 +84,13 @@
   --card-foreground: #121212;
   --popover: #ffffff;
   --popover-foreground: #121212;
-  --primary: #7c8cf2;
+  --primary: #C9A961;
   --primary-foreground: #ffffff;
-  --secondary: #EEF2FF;
+  --secondary: #1E1E1E;
   --secondary-foreground: #121212;
   --muted: #f3f4f6;
   --muted-foreground: #4b5563;
-  --accent: #6c7ef0;
+  --accent: #b09352;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --border: #e5e7eb;
@@ -261,7 +261,7 @@ textarea::placeholder {
   opacity: 0.85 !important;
 }
 
-/* Dynamic theme overrides to implement light periwinkle/lavender theme */
+/* Dynamic theme overrides to implement light/dark gold/charcoal theme */
 .theme-aesthetic:not(.dark-mode-override),
 .theme-neutral:not(.dark-mode-override),
 .theme-pastel:not(.dark-mode-override),
@@ -274,18 +274,18 @@ textarea::placeholder {
   --card-foreground: #121212;
   --popover: #ffffff;
   --popover-foreground: #121212;
-  --primary: #7c8cf2; /* Pastel Blue */
+  --primary: #C9A961; /* Evolve Gold */
   --primary-foreground: #ffffff;
-  --secondary: #EEF2FF; /* Light Blue-White */
+  --secondary: #1E1E1E; /* Charcoal */
   --secondary-foreground: #121212;
   --muted: #f3f4f6;
   --muted-foreground: #4b5563;
-  --accent: #6c7ef0; /* Periwinkle Blue */
+  --accent: #b09352; /* Muted Gold */
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --border: #e5e7eb;
   --input: #ffffff;
-  --ring: #7c8cf2;
+  --ring: #C9A961;
   --bg-image: none;
 }
 

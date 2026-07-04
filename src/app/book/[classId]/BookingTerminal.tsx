@@ -315,90 +315,136 @@ export default function BookingFlow() {
         )}
 
         {step === "Details" && selected && (
-          <div>
-            <button onClick={reset} className="flex items-center gap-1 text-xs mb-6 hover:text-white transition-colors" style={{ color: "#8C8C8C" }}>
-              <ChevronLeft size={14} /> Back to schedule
-            </button>
+          <div className="max-w-[420px] mx-auto bg-[#121212] border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-left">
+            
+            {/* Top Image Banner */}
+            <div className="relative aspect-[4/3] w-full overflow-hidden">
+              <img 
+                src={
+                  selected.title.toLowerCase().includes('silks') || selected.title.toLowerCase().includes('sling') 
+                    ? '/images/hero_aerial_silks.png' 
+                    : selected.title.toLowerCase().includes('chair') 
+                    ? '/images/class_chair.png' 
+                    : '/images/hero_pole_back.png'
+                } 
+                alt={selected.title}
+                className="w-full h-full object-cover filter grayscale contrast-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
+              
+              {/* Overlay Pills */}
+              <div className="absolute top-4 left-4 flex gap-2">
+                <span className="bg-black/75 border border-zinc-800 text-[10px] font-black uppercase tracking-widest text-zinc-300 px-3 py-1 rounded-full backdrop-blur-xs">
+                  {selected.class_type === 'special' ? 'Special Masterclass' : 'Medium Intensity'}
+                </span>
+                <span className="bg-black/75 border border-zinc-800 text-[10px] font-black uppercase tracking-widest text-zinc-300 px-3 py-1 rounded-full backdrop-blur-xs">
+                  {selected.duration_minutes} min
+                </span>
+              </div>
 
-            <h1 className="display text-4xl mb-1 text-white font-bold">{selected.title}</h1>
-            <div className="flex items-center gap-4 text-sm mb-6" style={{ color: "#8C8C8C" }}>
-              <span className="flex items-center gap-1"><User size={13} />{selected.instructor_name}</span>
-              <span className="flex items-center gap-1"><Calendar size={13} />{fmtDate(selected.starts_at)}</span>
-              <span className="flex items-center gap-1"><Clock size={13} />{fmtTime(selected.starts_at)} · {selected.duration_minutes} min</span>
-              <span className="flex items-center gap-1"><MapPin size={13} />Studio A</span>
+              {/* Close Button */}
+              <button 
+                onClick={reset} 
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/60 border border-zinc-850 flex items-center justify-center text-zinc-400 hover:text-white transition-all cursor-pointer select-none"
+                aria-label="Close details"
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="p-5 rounded-sm mb-4 bg-[#141414] border border-[#232323]">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs uppercase" style={{ color: "#5A5A5A", letterSpacing: "0.08em" }}>Rig Points</span>
-                <span className="text-xs" style={{ color: "#8C8C8C" }}>{selected.rig_points_used} of {selected.capacity} in use</span>
-              </div>
-              <div className="py-2 flex justify-center">
-                <RigDiagram used={selected.rig_points_used} capacity={selected.capacity} />
-              </div>
-              {selected.class_type === "special" && (
-                <p className="text-xs mt-3" style={{ color: "#8C8C8C" }}>
-                  Special class — needs at least {selected.min_to_run} bookings to run.
+            {/* Content Body */}
+            <div className="p-6 space-y-6">
+              <div className="space-y-2">
+                <h1 className="font-serif text-3xl font-bold uppercase text-white leading-tight">
+                  {selected.title}
+                </h1>
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed font-medium">
+                  A technique-focused session that builds strength, endurance, muscle tone, flexibility, and spatial awareness under safe rigging controls.
                 </p>
+              </div>
+
+              {/* Instructor Card Row */}
+              <div className="flex items-center gap-3 bg-zinc-950 p-3 rounded-xl border border-zinc-900">
+                <div className="w-10 h-10 rounded-full bg-[#C9A961]/10 border border-[#C9A961]/20 flex items-center justify-center text-lg select-none">
+                  👤
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white uppercase font-serif tracking-wide">{selected.instructor_name}</h4>
+                  <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-mono">Certified Pole &amp; Aerial Coach</span>
+                </div>
+              </div>
+
+              {/* Details List */}
+              <div className="space-y-3 text-xs font-semibold text-zinc-350 border-t border-b border-zinc-900 py-4">
+                <div className="flex items-center gap-3">
+                  <Clock size={15} className="text-[#C9A961]" />
+                  <span>{fmtTime(selected.starts_at)} &middot; {fmtDate(selected.starts_at)}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <MapPin size={15} className="text-[#C9A961]" />
+                  <span>Evolve Studio Branch Area</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <User size={15} className="text-[#C9A961]" />
+                  <span>{selected.capacity - selected.rig_points_used} of {selected.capacity} spots left</span>
+                </div>
+              </div>
+
+              {/* Number of Participants */}
+              <div className="flex items-center justify-between text-xs sm:text-sm">
+                <span className="font-bold text-zinc-400 uppercase tracking-wide">Number of Participants</span>
+                <div className="flex items-center gap-3">
+                  <button 
+                    type="button"
+                    onClick={() => {}} 
+                    className="w-8 h-8 rounded-full border border-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer font-bold transition-colors select-none"
+                  >
+                    —
+                  </button>
+                  <span className="font-mono font-bold text-white">01</span>
+                  <button 
+                    type="button"
+                    onClick={() => {}} 
+                    className="w-8 h-8 rounded-full border border-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer font-bold transition-colors select-none"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {actionError && (
+                <div className="p-3 rounded-xl text-xs flex items-center gap-2 bg-[#1A1212] border border-[#3A2222] text-[#D9635A]">
+                  <AlertCircle size={14} /> {actionError}
+                </div>
               )}
+
+              {/* Actions row */}
+              <div className="flex items-center gap-3 pt-2">
+                <button 
+                  onClick={confirmBooking} 
+                  disabled={!canConfirm || actionLoading}
+                  className="flex-1 py-3.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  style={{
+                    background: canConfirm ? "#C9A961" : "#232323",
+                    color: canConfirm ? "#0A0A0A" : "#5A5A5A",
+                    boxShadow: canConfirm ? "0 4px 12px rgba(201, 169, 97, 0.15)" : "none"
+                  }}
+                >
+                  {actionLoading && <Loader2 size={12} className="animate-spin" />}
+                  {wouldJoinWaitlist ? "Join Waitlist" : "Book Now"}
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmBooking}
+                  disabled={!canConfirm || actionLoading}
+                  className="w-12 h-12 rounded-full border border-zinc-800 hover:border-[#C9A961] flex items-center justify-center text-zinc-450 hover:text-[#C9A961] transition-all cursor-pointer select-none"
+                  aria-label="Confirm booking next"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
             </div>
 
-            <div className="p-5 rounded-sm mb-4 bg-[#141414] border border-[#232323]">
-              <div className="flex items-center gap-2 mb-3">
-                <CreditCard size={15} color="#C9A961" />
-                <span className="text-xs uppercase" style={{ color: "#5A5A5A", letterSpacing: "0.08em" }}>Membership Check</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span style={{ color: "#8C8C8C" }}>Membership status</span>
-                <StatusPill tone={profile?.membership_status === "active" ? "active" : "full"}>{profile?.membership_status}</StatusPill>
-              </div>
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span style={{ color: "#8C8C8C" }}>Class cost</span>
-                <span>{selected.credits_cost} credit{selected.credits_cost !== 1 ? "s" : ""}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span style={{ color: "#8C8C8C" }}>Your balance</span>
-                <span style={{ color: hasCredits ? "#F5F5F3" : "#D9635A" }}>{balance} credits</span>
-              </div>
-              {!profile?.waiver_signed_at && (
-                <p className="text-xs mt-3 flex items-center gap-1" style={{ color: "#D9635A" }}>
-                  <AlertCircle size={12} /> Waiver not on file — required before booking.
-                </p>
-              )}
-              {!hasCredits && !wouldJoinWaitlist && profile?.waiver_signed_at && (
-                <p className="text-xs mt-3 flex items-center gap-1" style={{ color: "#D9635A" }}>
-                  <AlertCircle size={12} /> Not enough credits. Purchase a package to book this class.
-                </p>
-              )}
-            </div>
-
-            {isFull(selected) && (
-              <div className="p-4 rounded-sm mb-4 flex items-start gap-2 bg-[#1A1512] border border-[#3A2E1A]">
-                <AlertCircle size={15} color="#C9A961" style={{ marginTop: "2px", flexShrink: 0 }} />
-                <p className="text-sm" style={{ color: "#C9A961" }}>
-                  All {selected.capacity} rig points are booked. Confirming will place you on the waitlist
-                  ({selected.waitlist_count}/{WAITLIST_MAX}).
-                </p>
-              </div>
-            )}
-
-            {actionError && (
-              <div className="p-3 rounded-sm mb-4 text-sm flex items-center gap-2 bg-[#1A1212] border border-[#3A2222] text-[#D9635A]">
-                <AlertCircle size={14} /> {actionError}
-              </div>
-            )}
-
-            <button onClick={confirmBooking} disabled={!canConfirm || actionLoading}
-              className="w-full py-3 rounded-sm text-sm uppercase tracking-wide flex items-center justify-center gap-2 transition-colors"
-              style={{
-                background: canConfirm ? "#C9A961" : "#232323",
-                color: canConfirm ? "#0A0A0A" : "#5A5A5A",
-                fontWeight: 600, letterSpacing: "0.08em",
-                cursor: canConfirm && !actionLoading ? "pointer" : "not-allowed",
-              }}>
-              {actionLoading && <Loader2 size={14} className="animate-spin" />}
-              {wouldJoinWaitlist ? "Join Waitlist" : "Confirm & Book"}
-            </button>
           </div>
         )}
 

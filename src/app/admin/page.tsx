@@ -38,7 +38,7 @@ export default function AdminPage() {
 
     // Simulate authentication
     setTimeout(() => {
-      if (email === 'admin@evolve.com' && password === 'admin123') {
+      if (email === 'admin@crtl.com' && password === 'admin123') {
         document.cookie = "evolve-admin-session=true; path=/; max-age=3600";
         localStorage.setItem('evolve-admin-session', 'true');
         setIsAuthenticated(true);
@@ -114,7 +114,7 @@ export default function AdminPage() {
             <input
               type="email"
               required
-              placeholder="admin@evolve.com"
+              placeholder="admin@crtl.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-[#C9A961] focus:ring-1 focus:ring-[#C9A961] transition-all"

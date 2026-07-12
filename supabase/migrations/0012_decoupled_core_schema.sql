@@ -1,87 +1,28 @@
-# Evolve by Cams — Studio Operations & Booking Console
+-- supabase/migrations/0012_decoupled_core_schema.sql
+-- Decoupled Global System Architecture Schema
 
-Welcome to the comprehensive, master developer guide and system overview for the **Evolve by Cams** Pilates & Wellness Studio platform. This document outlines the decoupled architecture, concrete database schemas, native database constraints, and the honest integration status of each subsystem.
-
----
-
-## 📊 1. Current Integration Status & Honesty Checklist
-
-To ensure absolute transparency across stakeholders and development cycles, the table below highlights exactly which components are live, partially integrated, or currently simulated as client-side prototypes.
-
-| System / Feature | Integration Level | Technical Implementation Detail |
-| :--- | :--- | :--- |
-| **Authentication** | **Fully Secured** | Live login UI exists at `/admin` supporting default admin `admin@crtl.com` email. Server-side `src/middleware.ts` forces redirect to login page for all admin-exclusive routes (`/portal`, `/roster`, `/schedule`, `/analytics`, `/wallet`, `/profile`). |
-| **System Security** | **Active Guard** | Suppressed F12, Right-Click, and standard DevTools key combinations, with background interval console clearance to prevent code leaks. |
-| **Database Migrations** | **Migrated (Local Schema)** | The SQL migrations (`/supabase/migrations`) contain the complete relational schemas, indexes, and triggers, but frontend React contexts currently write to `localStorage` mock stores. |
-| **Roster Booking Map** | **Simulated / Client-Side** | Booking map (`ReformerMap.tsx`) and rig points (A1-A5) are loaded dynamically from state. Storing, cancellation, and waitlist allocations are simulated in memory/storage. |
-| **Tuesday Lockout** | **Fully Enforced (JS & DB)** | Prevented on the Next.js calendar (`BookingCalendarPage`) using JS timezone helpers (`Asia/Manila` checks) and protected at the database layer via triggers. |
-| **Payments (PayMongo)** | **Simulated / Client-Side Mock** | Top-ups and checkouts simulate success instantly. Deno edge functions for PayMongo checkout sessions exist under `/supabase/functions` but are not yet deployed or wired. |
-| **Stripe Terminal** | **Not Started** | Connection code for BBPOS WisePOS E readers to the POS front-desk terminal has not yet been started. |
-
----
-
-## 🏗️ 2. Decoupled Global System Architecture
-
-To prevent static export conflicts and support dynamic routing, the system separates administrative workflows from client mobile apps while mapping to a unified Supabase hub.
-
-```mermaid
-graph TD
-    %% Frontends
-    subgraph Client Tier [Frontend Client Interfaces]
-        admin_web[Admin Web Console<br/>Next.js 15 SSR / Vercel]
-        mobile_app[Client Mobile App<br/>React Native + Expo]
-    end
-
-    %% API Gateway / Backend Platform
-    subgraph Backend Platform [Managed Backend Hub]
-        sb_auth[Supabase Auth<br/>OAuth / JWT Token Router]
-        sb_storage[Supabase Storage<br/>SVGs / Logos / User Uploads]
-        
-        subgraph PostgreSQL Engine [PostgreSQL Database Engine]
-            rls[Row-Level Security Policies]
-            rpc[Stored Procedures / RPC Locks]
-            triggers[Automation Triggers]
-            tables[(Relational Core Tables)]
-        end
-    end
-
-    %% External Systems
-    subgraph External Infrastructure [Third-Party Services]
-        paymongo[PayMongo Edge Functions<br/>GCash / Maya / Cards]
-        resend[Resend API<br/>Transactional Email]
-        cron[Supabase Cron / pg_cron<br/>No-Show Auto Checks]
-    end
-
-    %% Connections
-    admin_web -->|Secure Dynamic HTTPS / WSS| PostgreSQL Engine
-    admin_web -->|Session Cookies| sb_auth
-    mobile_app -->|JWT Bearer Tokens| PostgreSQL Engine
-    mobile_app -->|Secure Storage SDK| sb_auth
-
-    PostgreSQL Engine --> rls --> rpc --> triggers --> tables
-    tables -->|Webhooks| paymongo
-    tables -->|Webhooks| resend
-    cron -->|Executes Stored Procedures| rpc
-```
-
----
-
-## 🗄️ 3. Concrete Production Database Schema
-
-The core relational structure is defined in SQL below to prevent overbookings and track package balances:
-
-```sql
 -- Enable necessary extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Define Custom Application Enumerations
-CREATE TYPE user_role AS ENUM ('CLIENT', 'STAFF', 'ADMIN');
-CREATE TYPE class_category AS ENUM ('POLE_FITNESS', 'AERIAL_ARTS', 'PILATES_REFORMER', 'FLEXIBILITY');
-CREATE TYPE booking_state AS ENUM ('BOOKED', 'WAITLISTED', 'ATTENDED', 'NO_SHOW', 'CANCELLED_TIMELY', 'CANCELLED_LATE');
-CREATE TYPE payment_gateway_status AS ENUM ('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED');
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+        CREATE TYPE user_role AS ENUM ('CLIENT', 'STAFF', 'ADMIN');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'class_category') THEN
+        CREATE TYPE class_category AS ENUM ('POLE_FITNESS', 'AERIAL_ARTS', 'PILATES_REFORMER', 'FLEXIBILITY');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'booking_state') THEN
+        CREATE TYPE booking_state AS ENUM ('BOOKED', 'WAITLISTED', 'ATTENDED', 'NO_SHOW', 'CANCELLED_TIMELY', 'CANCELLED_LATE');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_gateway_status') THEN
+        CREATE TYPE payment_gateway_status AS ENUM ('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED');
+    END IF;
+END $$;
 
 -- 1. Profiles Table (Linked to Supabase Auth)
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
     member_id VARCHAR(20) UNIQUE NOT NULL, -- Format: EPF-YYYYX
     full_name TEXT NOT NULL,
@@ -92,7 +33,7 @@ CREATE TABLE public.profiles (
 );
 
 -- 2. Family Members Table (For multi-booking capabilities)
-CREATE TABLE public.family_members (
+CREATE TABLE IF NOT EXISTS public.family_members (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     primary_user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
     full_name TEXT NOT NULL,
@@ -101,7 +42,7 @@ CREATE TABLE public.family_members (
 );
 
 -- 3. Instructors Profile Registry
-CREATE TABLE public.instructors (
+CREATE TABLE IF NOT EXISTS public.instructors (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     full_name TEXT NOT NULL,
     bio TEXT,
@@ -110,7 +51,7 @@ CREATE TABLE public.instructors (
 );
 
 -- 4. Classes Definition Template Table
-CREATE TABLE public.class_definitions (
+CREATE TABLE IF NOT EXISTS public.class_definitions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
     category class_category NOT NULL,
@@ -119,7 +60,7 @@ CREATE TABLE public.class_definitions (
 );
 
 -- 5. Active Live Schedules
-CREATE TABLE public.class_schedules (
+CREATE TABLE IF NOT EXISTS public.class_schedules (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     class_definition_id UUID REFERENCES public.class_definitions(id) ON DELETE RESTRICT NOT NULL,
     instructor_id UUID REFERENCES public.instructors(id) ON DELETE RESTRICT NOT NULL,
@@ -132,14 +73,14 @@ CREATE TABLE public.class_schedules (
 );
 
 -- 6. Physical Rig Points / Apparatus Mapping
-CREATE TABLE public.rig_points (
+CREATE TABLE IF NOT EXISTS public.rig_points (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     station_code VARCHAR(10) UNIQUE NOT NULL, -- e.g., 'A1', 'A2', 'A3', 'A4', 'A5'
     is_operational BOOLEAN DEFAULT true NOT NULL
 );
 
 -- 7. Appended Credit Ledger (Transaction Log)
-CREATE TABLE public.credit_ledger (
+CREATE TABLE IF NOT EXISTS public.credit_ledger (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
     amount INT NOT NULL, -- positive for purchase/refund, negative for booking debit
@@ -148,7 +89,7 @@ CREATE TABLE public.credit_ledger (
 );
 
 -- 8. Core Bookings and Reservations Engine Table
-CREATE TABLE public.bookings (
+CREATE TABLE IF NOT EXISTS public.bookings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES public.profiles(id) ON DELETE RESTRICT NOT NULL,
     class_schedule_id UUID REFERENCES public.class_schedules(id) ON DELETE RESTRICT NOT NULL,
@@ -163,16 +104,14 @@ CREATE TABLE public.bookings (
     CONSTRAINT chk_waitlist_pos CHECK (waitlist_position IN (1, 2)),
     CONSTRAINT unique_user_class_booking UNIQUE (user_id, class_schedule_id)
 );
-```
 
----
+-- Index for preventing rig point double bookings per class session
+CREATE UNIQUE INDEX IF NOT EXISTS idx_prevent_rig_point_double_booking
+ON public.bookings (class_schedule_id, rig_point_id)
+WHERE (status IN ('BOOKED', 'ATTENDED') AND rig_point_id IS NOT NULL);
 
-## 🔒 4. Server-Side Safety Triggers & Strict Business Rules
 
-To run a secure, robust studio ecosystem, operational boundaries are written natively inside PostgreSQL:
-
-### Rule A: Instructor Double-Booking Prevention Trigger
-```sql
+-- Rule A: Instructor Double-Booking Prevention Trigger Function
 CREATE OR REPLACE FUNCTION verify_instructor_availability()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -188,20 +127,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Recreate trigger block
+DROP TRIGGER IF EXISTS trg_block_instructor_double_booking ON public.class_schedules;
 CREATE TRIGGER trg_block_instructor_double_booking
 BEFORE INSERT OR UPDATE ON public.class_schedules
 FOR EACH ROW EXECUTE FUNCTION verify_instructor_availability();
-```
 
-### Rule B: Dynamic Physical Rig Point Allocation Constraint
-```sql
-CREATE UNIQUE INDEX idx_prevent_rig_point_double_booking
-ON public.bookings (class_schedule_id, rig_point_id)
-WHERE (status IN ('BOOKED', 'ATTENDED') AND rig_point_id IS NOT NULL);
-```
 
-### Rule C: Manila Timezone & Waiver Gated Atomic Booking RPC
-```sql
+-- Rule B: Concurrency & Race Condition Resolution (Atomic Booking Stored Procedure RPC)
 CREATE OR REPLACE FUNCTION execute_atomic_studio_booking(
     p_user_id UUID,
     p_schedule_id UUID,
@@ -217,21 +150,21 @@ DECLARE
     v_new_booking_id UUID;
     v_response JSONB;
 BEGIN
-    -- 1. Lock rows sequentially to block race conditions
+    -- 1. Lock rows sequentially to block race conditions across matching request blocks
     SELECT start_time INTO v_class_time FROM public.class_schedules WHERE id = p_schedule_id FOR UPDATE;
     
-    -- 2. Enforce Tuesday Lockout Rule relative to Manila Timezone
+    -- 2. Enforce the Tuesday Lockout Rule relative to Manila
     IF EXTRACT(ISODOW FROM v_class_time AT TIME ZONE 'Asia/Manila') = 2 THEN
         RAISE EXCEPTION 'Operation Blocked: Evolve Studio is closed on Tuesdays.';
     END IF;
 
-    -- 3. Enforce Waiver Requirement
+    -- 3. Enforce the Digital Waiver requirement
     SELECT waiver_signed_at INTO v_waiver_signed FROM public.profiles WHERE id = p_user_id;
     IF v_waiver_signed IS NULL THEN
         RAISE EXCEPTION 'Policy Blocked: Client has not finalized the dynamic studio liability waiver.';
     END IF;
 
-    -- 4. Calculate credit balance
+    -- 4. Calculate client credit balance securely from append-only records
     SELECT COALESCE(SUM(amount), 0) INTO v_current_balance FROM public.credit_ledger WHERE user_id = p_user_id FOR UPDATE;
     IF v_current_balance < 1 THEN
         RAISE EXCEPTION 'Transaction Blocked: Client has zero remaining class package credits.';
@@ -241,7 +174,7 @@ BEGIN
     SELECT COUNT(*) INTO v_active_bookings_count FROM public.bookings WHERE class_schedule_id = p_schedule_id AND status = 'BOOKED';
     SELECT COUNT(*) INTO v_current_waitlist_count FROM public.bookings WHERE class_schedule_id = p_schedule_id AND status = 'WAITLISTED';
 
-    -- Roster spots available
+    -- Case A: Room is available in the regular roster
     IF v_active_bookings_count < 5 THEN
         INSERT INTO public.bookings (user_id, class_schedule_id, rig_point_id, family_member_id, status)
         VALUES (p_user_id, p_schedule_id, p_rig_point_id, p_family_member_id, 'BOOKED')
@@ -253,49 +186,22 @@ BEGIN
         v_response := jsonb_build_object('success', true, 'booking_id', v_new_booking_id, 'allocation', 'ROSTER');
         RETURN v_response;
 
-    -- Waitlist spots available
+    -- Case B: Roster full, move entry to the prioritized FIFO waitlist queue
     ELSIF v_current_waitlist_count < 2 THEN
         INSERT INTO public.bookings (user_id, class_schedule_id, rig_point_id, family_member_id, status, waitlist_position)
         VALUES (p_user_id, p_schedule_id, NULL, p_family_member_id, 'WAITLISTED', v_current_waitlist_count + 1)
         RETURNING id INTO v_new_booking_id;
 
+        -- We charge/hold the credit immediately for waitlists to guarantee intention
         INSERT INTO public.credit_ledger (user_id, amount, description)
         VALUES (p_user_id, -1, concat('Escrow credit held for waitlist position #', v_current_waitlist_count + 1));
 
         v_response := jsonb_build_object('success', true, 'booking_id', v_new_booking_id, 'allocation', 'WAITLIST');
         RETURN v_response;
 
-    -- Roster and waitlist full
+    -- Case C: Both structures are full
     ELSE
         RAISE EXCEPTION 'Capacity Exceeded: This session and its waitlist queue are completely packed.';
     END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-```
-
----
-
-## 🚀 5. Setup & Local Execution
-
-### 1. Restore Dependencies
-```powershell
-# Web Application
-npm install
-
-# Python Orchestrator
-pip install -r requirements.txt
-```
-
-### 2. Set Local Environment Variables
-Create a `.env.local` file in the root directory:
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxxx
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-```
-
-### 3. Run Development Server
-```powershell
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) to view the portal.

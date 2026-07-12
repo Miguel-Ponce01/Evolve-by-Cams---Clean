@@ -326,4 +326,23 @@ textarea::placeholder {
   }
 }
 
+/* Chrome Autofill Input Color Overrides for Dark Mode */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0px 1000px #121212 inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+input {
+  color: #ffffff !important;
+}
+
+/* Specific text inputs dark color overrides */
+input[type="email"], input[type="password"], input[type="text"] {
+  color: #ffffff !important;
+}
+
 

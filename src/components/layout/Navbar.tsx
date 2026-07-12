@@ -42,12 +42,12 @@ export function Navbar() {
   const isAdmin = pathname.startsWith('/portal') ||
                   pathname.startsWith('/roster') ||
                   pathname.startsWith('/schedule') ||
-                  pathname.startsWith('/analytics');
+                  pathname.startsWith('/analytics') ||
+                  pathname.startsWith('/wallet') ||
+                  pathname.startsWith('/profile') ||
+                  pathname.startsWith('/dashboard');
 
-  const isClient = pathname.startsWith('/dashboard') ||
-                   pathname.startsWith('/wallet') ||
-                   pathname.startsWith('/profile') ||
-                   pathname.startsWith('/memberships');
+  const isClient = pathname.startsWith('/memberships');
 
   // Define nav links based on layout mode
   const getNavItems = () => {
@@ -58,13 +58,13 @@ export function Navbar() {
         { name: 'Schedule', path: '/schedule' },
         { name: 'Analytics', path: '/analytics' },
         { name: 'Coaches', path: '/instructors' },
+        { name: 'Wallet', path: '/wallet' },
+        { name: 'Profile', path: '/profile' },
+        { name: 'Dashboard', path: '/dashboard' },
       ];
     }
     if (isClient) {
       return [
-        { name: 'Dashboard', path: '/dashboard' },
-        { name: 'Wallet', path: '/wallet' },
-        { name: 'Profile', path: '/profile' },
         { name: 'Memberships', path: '/memberships' },
       ];
     }
@@ -130,7 +130,7 @@ export function Navbar() {
                     key={item.path + item.name}
                     href={item.path}
                     className={cn(
-                      'relative text-[11px] font-black uppercase tracking-widest transition-all duration-200 cursor-pointer py-1',
+                      'relative text-[11px] font-black uppercase tracking-widest transition-colors duration-200 cursor-pointer py-1',
                       'after:absolute after:bottom-0 after:left-0 after:h-[2px] after:rounded-full after:transition-all after:duration-300',
                       isActive
                         ? `text-[#C9A961] after:w-full after:bg-[#C9A961]`
@@ -147,7 +147,7 @@ export function Navbar() {
             {isAdmin ? (
               <Link
                 href="/"
-                className="py-2.5 px-5 rounded-full border border-zinc-700 hover:border-[#C9A961] text-zinc-300 hover:text-[#C9A961] font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1.5"
+                className="py-2.5 px-5 rounded-full border border-zinc-700 hover:border-[#C9A961] text-zinc-300 hover:text-[#C9A961] font-black text-xs uppercase tracking-widest transition-transform duration-200 active:scale-[0.96] flex items-center gap-1.5"
               >
                 <span>Exit Portal</span>
                 <LogOut size={12} />
@@ -155,7 +155,7 @@ export function Navbar() {
             ) : isClient ? (
               <Link
                 href="/book"
-                className="py-2.5 px-6 rounded-full bg-[#C9A961] hover:bg-[#b09352] text-black font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-md shadow-[#C9A961]/10"
+                className="py-2.5 px-6 rounded-full bg-[#C9A961] hover:bg-[#b09352] text-black font-black text-xs uppercase tracking-widest transition-transform duration-200 active:scale-[0.96] shadow-md shadow-[#C9A961]/10"
               >
                 Book Session
               </Link>
@@ -163,15 +163,15 @@ export function Navbar() {
               <div className="flex items-center gap-3">
                 <Link
                   href="/book"
-                  className="py-2.5 px-6 rounded-full bg-[#C9A961] hover:bg-[#b09352] text-black font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-md shadow-[#C9A961]/20 active:scale-95"
+                  className="py-2.5 px-6 rounded-full bg-[#C9A961] hover:bg-[#b09352] text-black font-black text-xs uppercase tracking-widest transition-transform duration-200 active:scale-[0.96] shadow-md shadow-[#C9A961]/20"
                 >
                   Book a Class
                 </Link>
 
                 {/* Log In button */}
                 <Link
-                  href="/dashboard"
-                  className="py-2.5 px-5 rounded-full border border-zinc-700 hover:border-[#C9A961] text-zinc-300 hover:text-[#C9A961] font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1.5"
+                  href="/login"
+                  className="py-2.5 px-5 rounded-full border border-zinc-700 hover:border-[#C9A961] text-zinc-300 hover:text-[#C9A961] font-black text-xs uppercase tracking-widest transition-transform duration-200 active:scale-[0.96] flex items-center gap-1.5"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
@@ -233,6 +233,9 @@ export function Navbar() {
                             { label: 'Events Calendar Builder', href: '/portal/events' },
                             { label: 'Roster Analytics', href: '/roster' },
                             { label: 'Occupancy & Reports', href: '/analytics' },
+                            { label: 'Wallet Ledger', href: '/wallet' },
+                            { label: 'Client Registry', href: '/profile' },
+                            { label: 'Client Dashboard', href: '/dashboard' },
                           ].map(link => (
                             <Link
                               key={link.href}

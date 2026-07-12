@@ -29,6 +29,13 @@
 - [x] **Aesthetics & Theme Config** — Integrated custom black/white/gray theme config toggle alongside original Sunset gradient, updated class catalog, and optimized membership page layout.
 - [x] **Premium Navbar Retheme** — Upgraded the global header navigation with animated active-page underlines, dark dropdown menus, and gold mobile notifications dot.
 - [x] **About Us & Home Pages** — Designed responsive homepage hero carousel, a dedicated class list catalog module, and an About Us page featuring 5 high-fidelity Evolve studio photos.
+- [x] **Subdomain Admin Routing & Navbar Decoupling** — Separated Wallet, Profile, and Dashboard from client layouts to admin portal scopes.
+- [x] **POS Override Form Integration** — Rethemed and integrated POSOverrideBridge with live class dropdown selections.
+- [x] **Public Pricing Desk** — Converted /memberships to a clean public layout.
+- [x] **Cybersecurity Defenses** — Blocked F12, Inspect element, source code shortcuts, right clicks, and added automated console clearing alongside protected middleware routes.
+- [x] **Dark Mode Autofill Repair** — Repaired input placeholder and text color override leaks under Chrome autocomplete.
+- [x] **Auth Credentials Update** — Changed default console email to admin@crtl.com and password to admin123.
+- [x] **Master Implementation Plan** — Created detailed blueprints and implementation guidelines.
 
 ---
 
@@ -37,3 +44,4 @@
 - [ ] **Auth Signups Integration** — Replace mock auth states with live Supabase Magic Link and SMS OTP redirects.
 - [ ] **Deploy Edge Functions** — Deploy `notify-instructor`, `create-checkout`, and `paymongo-webhook` to production Supabase Cloud.
 - [ ] **Stripe Terminal integration** — Connect BBPOS WisePOS E readers to the POS terminal dashboard.
+

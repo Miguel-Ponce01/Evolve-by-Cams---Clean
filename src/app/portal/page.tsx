@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
 import Link from 'next/link';
+import POSOverrideBridge from '@/components/admin/POSOverrideBridge';
 
 export default function AdminPortal() {
   const {
@@ -27,6 +28,8 @@ export default function AdminPortal() {
     bookings,
     classes,
     addTransaction,
+    addOrUpdateCustomer,
+    bookSpot,
     testimonials,
     updateTestimonial
   } = useBooking();
@@ -71,6 +74,62 @@ export default function AdminPortal() {
 
     setOverrideDescription('Staff credit override');
     setCreditAdjustment(1);
+  };
+
+  const handleSocialMediaOverride = (data: {
+    clientName: string;
+    email: string;
+    paymentChannel: string;
+    refNum: string;
+    classId: string;
+    screenshotUrl?: string;
+  }) => {
+    let client = customers.find(c => c.email.toLowerCase() === data.email.toLowerCase());
+    if (!client) {
+      client = addOrUpdateCustomer({
+        name: data.clientName,
+        email: data.email,
+        credits: 1,
+        membershipTier: 'Single Session',
+        tags: ['Social Media Intake']
+      });
+    } else {
+      addOrUpdateCustomer({
+        ...client,
+        credits: Math.max(client.credits, 1)
+      });
+    }
+
+    const targetClass = classes.find(c => c.id === data.classId);
+    const spotNumber = targetClass ? (targetClass.bookedSpots?.length || 0) + 1 : 1;
+
+    const bookingResult = bookSpot(
+      data.classId,
+      spotNumber,
+      'cash',
+      data.clientName,
+      data.email,
+      client.phone || '',
+      undefined,
+      'Social Media Intake Override',
+      0
+    );
+
+    if (bookingResult.success) {
+      addTransaction({
+        customerName: data.clientName,
+        customerEmail: data.email,
+        customerPhone: client.phone || '',
+        type: 'membership',
+        description: `Social Media Override: Spot #${spotNumber} in ${targetClass?.title || 'Class'} (${data.paymentChannel} Ref: ${data.refNum})`,
+        paymentMethod: 'credit',
+        amount: 0,
+        status: 'paid',
+        handledBy: 'Cams Rivera'
+      });
+    } else {
+      alert(`Override Booking Failed: ${bookingResult.message}`);
+    }
   };
 
   // Simulate active check-in logs and booking streams
@@ -179,6 +238,9 @@ export default function AdminPortal() {
                 </button>
               </div>
             </div>
+
+            {/* Social Media Intake Bridge / Override */}
+            <POSOverrideBridge classes={classes} onConfirmOverride={handleSocialMediaOverride} />
 
             {/* Testimonials Management Console */}
             <div className="bg-[#121212] border border-zinc-900 rounded-2xl p-6 space-y-6">

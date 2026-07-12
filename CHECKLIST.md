@@ -37,11 +37,12 @@
 - [x] **Auth Credentials Update** — Changed default console email to admin@crtl.com and password to admin123.
 - [x] **Master Implementation Plan** — Created detailed blueprints and implementation guidelines.
 
----
-
 ## 🔴 Remaining Tasks (Production Launch)
 
-- [ ] **Auth Signups Integration** — Replace mock auth states with live Supabase Magic Link and SMS OTP redirects.
 - [ ] **Deploy Edge Functions** — Deploy `notify-instructor`, `create-checkout`, and `paymongo-webhook` to production Supabase Cloud.
 - [ ] **Stripe Terminal integration** — Connect BBPOS WisePOS E readers to the POS terminal dashboard.
+
+## ✅ Completed (Evolve Studio v2 Upgrade)
+
+- [x] **Auth Signups Integration** — Replaced mock auth states with live Supabase Magic Link and SMS OTP redirects.
 

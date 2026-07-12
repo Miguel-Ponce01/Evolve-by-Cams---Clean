@@ -29,6 +29,11 @@ function StatusPill({ status }: { status: string }) {
       <XCircle size={9} /> Cancelled
     </span>
   );
+  if (status === 'pending') return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-50 text-amber-700 border border-amber-200">
+      <Clock size={9} /> Pending Approval
+    </span>
+  );
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-sky-50 text-sky-600 border border-sky-200">
       <Clock size={9} /> Upcoming
@@ -58,6 +63,7 @@ export default function RosterPage() {
     classes, bookings, waitlist,
     checkInBooking, cancelBooking,
     promoteFromWaitlist,
+    confirmBooking,
   } = useBooking();
 
   // ── UI State ──────────────────────────────────────────────────────────────
@@ -437,6 +443,21 @@ export default function RosterPage() {
                               className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 text-white text-[10px] font-bold uppercase rounded-pill hover:bg-emerald-600 active:scale-[0.98] transition-all cursor-pointer mx-auto whitespace-nowrap"
                             >
                               <CheckCircle2 size={11} /> Check In
+                            </button>
+                          )}
+                          {b.status === 'pending' && (
+                            <button
+                              onClick={() => {
+                                const res = confirmBooking(b.id);
+                                if (res.success) {
+                                  showToast(res.message);
+                                } else {
+                                  showToast(res.message, 'error');
+                                }
+                              }}
+                              className="flex items-center gap-1 px-3 py-1.5 bg-[#C9A961] text-black text-[10px] font-bold uppercase rounded-pill hover:bg-[#b09352] active:scale-[0.98] transition-all cursor-pointer mx-auto whitespace-nowrap animate-pulse"
+                            >
+                              Confirm
                             </button>
                           )}
                           {b.status === 'attended' && (

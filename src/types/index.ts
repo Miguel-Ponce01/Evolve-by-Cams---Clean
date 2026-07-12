@@ -36,7 +36,7 @@ export interface Booking {
   bookedAt: string;                               // ISO timestamp
   paymentMethod: 'credit' | 'card' | 'cash';
   amountPaid: number;
-  status: 'upcoming' | 'attended' | 'cancelled';
+  status: 'upcoming' | 'attended' | 'cancelled' | 'pending';
   customerName: string;
   customerEmail: string;
   customerPhone?: string;

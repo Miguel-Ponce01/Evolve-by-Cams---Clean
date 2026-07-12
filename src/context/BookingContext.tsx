@@ -36,6 +36,8 @@ interface BookingContextType {
 
   checkInBooking: (bookingId: string) => { success: boolean; message: string };
 
+  confirmBooking: (bookingId: string) => { success: boolean; message: string };
+
   buyCreditsForCustomer: (customerId: string, packType: PackType) => void;
 
   addOrUpdateCustomer: (
@@ -749,7 +751,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       bookedAt:       new Date().toISOString(),
       paymentMethod:  method,
       amountPaid:     method === 'credit' ? 0 : total,
-      status:         'upcoming',
+      status:         method === 'credit' ? 'upcoming' : 'pending',
       customerName,
       customerEmail,
       customerPhone,
@@ -773,7 +775,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       description: `${cls.title} (Spot #${spotNumber})`,
       paymentMethod: method,
       amount: method === 'credit' ? 0 : total,
-      status: 'paid',
+      status: method === 'credit' ? 'paid' : 'pending',
       bookingId: newBooking.id,
       handledBy: handledBy || 'Cams Rivera',
     };
@@ -961,6 +963,34 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     ));
 
     return { success: true, message: `${booking.customerName} checked in successfully.` };
+  }, [bookings]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // CONFIRM PENDING BOOKING
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const confirmBooking = useCallback((bookingId: string): { success: boolean; message: string } => {
+    const booking = bookings.find(b => b.id === bookingId);
+    if (!booking) return { success: false, message: 'Booking not found.' };
+    if (booking.status !== 'pending') return { success: false, message: 'Booking is not pending confirmation.' };
+
+    setBookings(prev => {
+      const next = prev.map(b =>
+        b.id === bookingId ? { ...b, status: 'upcoming' as const } : b
+      );
+      saveToStorage('evolve_bookings', next);
+      return next;
+    });
+
+    setTransactions(prev => {
+      const next = prev.map(t =>
+        t.bookingId === bookingId ? { ...t, status: 'paid' as const } : t
+      );
+      saveToStorage('evolve_transactions', next);
+      return next;
+    });
+
+    return { success: true, message: `Booking for ${booking.customerName} has been confirmed.` };
   }, [bookings]);
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1231,7 +1261,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     <BookingContext.Provider value={{
       user, customers, classes, bookings, waitlist, spotLocks, transactions,
       updateUser,
-      bookSpot, cancelBooking, checkInBooking,
+      bookSpot, cancelBooking, checkInBooking, confirmBooking,
       buyCreditsForCustomer,
       addOrUpdateCustomer,
       getClassById, getBookingForSpot,

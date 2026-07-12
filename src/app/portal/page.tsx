@@ -31,13 +31,64 @@ export default function AdminPortal() {
     addOrUpdateCustomer,
     bookSpot,
     testimonials,
-    updateTestimonial
+    updateTestimonial,
+    confirmBooking
   } = useBooking();
 
   // Selected client for manual balance override
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [creditAdjustment, setCreditAdjustment] = useState<number>(1);
   const [overrideDescription, setOverrideDescription] = useState<string>('Staff credit override');
+
+  // Walk-in Quick Booking Form State
+  const [walkInClassId, setWalkInClassId] = useState<string>('');
+  const [walkInClientName, setWalkInClientName] = useState<string>('');
+  const [walkInClientEmail, setWalkInClientEmail] = useState<string>('');
+  const [walkInClientPhone, setWalkInClientPhone] = useState<string>('');
+  const [walkInPaymentMethod, setWalkInPaymentMethod] = useState<'cash' | 'card' | 'credit'>('cash');
+  const [walkInSpotNumber, setWalkInSpotNumber] = useState<number>(1);
+
+  const availableSpotsForSelectedClass = useMemo(() => {
+    const cls = classes.find(c => c.id === walkInClassId);
+    if (!cls) return [];
+    const spots = [];
+    for (let s = 1; s <= cls.totalSpots; s++) {
+      if (!cls.bookedSpots.includes(s)) {
+        spots.push(s);
+      }
+    }
+    return spots;
+  }, [classes, walkInClassId]);
+
+  const handleWalkInBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!walkInClassId || !walkInClientName || !walkInClientEmail) {
+      alert("Please fill in the class, client name, and email.");
+      return;
+    }
+
+    const res = bookSpot(
+      walkInClassId,
+      walkInSpotNumber,
+      walkInPaymentMethod,
+      walkInClientName,
+      walkInClientEmail,
+      walkInClientPhone || undefined,
+      undefined,
+      'Staff Walk-in Console'
+    );
+
+    if (res.success) {
+      alert(`Walk-in request logged as PENDING for Spot #${walkInSpotNumber}.`);
+      // Reset form
+      setWalkInClientName('');
+      setWalkInClientEmail('');
+      setWalkInClientPhone('');
+      setWalkInClassId('');
+    } else {
+      alert(`Booking failed: ${res.message}`);
+    }
+  };
   
   // Real-time terminal status (Sync simulator)
   const [onlineTerminals, setOnlineTerminals] = useState<Array<{ name: string; status: 'online' | 'offline'; ip: string }>>([
@@ -241,6 +292,161 @@ export default function AdminPortal() {
 
             {/* Social Media Intake Bridge / Override */}
             <POSOverrideBridge classes={classes} onConfirmOverride={handleSocialMediaOverride} />
+
+            {/* Booking Requests Manager */}
+            <div className="bg-[#121212] border border-zinc-900 rounded-2xl p-6 space-y-6">
+              <div className="flex justify-between items-center border-b border-zinc-900 pb-3">
+                <h3 className="text-base font-black uppercase tracking-widest flex items-center gap-2 text-[#C9A961]">
+                  <Activity size={18} />
+                  BOOKING REQUESTS MANAGER
+                </h3>
+                <Badge className="bg-[#C9A961]/10 border border-[#C9A961]/30 text-[#C9A961] text-[10px] font-bold">
+                  {bookings.filter(b => b.status === 'pending').length} PENDING
+                </Badge>
+              </div>
+
+              {/* Pending Bookings List */}
+              <div className="space-y-4">
+                {bookings.filter(b => b.status === 'pending').length === 0 ? (
+                  <p className="text-xs text-zinc-500 font-mono text-center py-4">NO PENDING BOOKING REQUESTS</p>
+                ) : (
+                  bookings.filter(b => b.status === 'pending').map(b => {
+                    const cls = classes.find(c => c.id === b.classId);
+                    return (
+                      <div key={b.id} className="p-4 bg-[#1C1C1C] border border-zinc-850 rounded-xl space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="text-[9px] uppercase font-mono px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800">
+                              {b.paymentMethod === 'credit' ? 'CREDIT' : b.paymentMethod.toUpperCase()}
+                            </span>
+                            <h4 className="text-sm font-bold text-white mt-2">{b.customerName}</h4>
+                            <p className="text-xs text-zinc-500 font-mono">{b.customerEmail}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-[#C9A961] font-mono block">Spot #{b.spotNumber}</span>
+                            <span className="text-xs font-bold text-white font-mono">
+                              {b.paymentMethod === 'credit' ? '1 Credit' : `₱${b.amountPaid}`}
+                            </span>
+                          </div>
+                        </div>
+
+                        {cls && (
+                          <div className="p-2.5 bg-zinc-900/50 rounded-lg text-xs space-y-1">
+                            <p className="font-bold text-zinc-300">{cls.title}</p>
+                            <p className="text-zinc-500 font-mono text-[10px]">{formatDate(cls.date)} &bull; {cls.time} ({cls.instructor.name})</p>
+                          </div>
+                        )}
+
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={() => {
+                              const res = confirmBooking(b.id);
+                              if (res.success) {
+                                alert(res.message);
+                              } else {
+                                alert(res.message);
+                              }
+                            }}
+                            className="flex-1 py-2 bg-[#C9A961] hover:bg-[#b09352] text-black text-[10px] font-black uppercase tracking-widest rounded-sm transition-all"
+                          >
+                            Confirm Booking &amp; Payment
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Walk-in Registration form */}
+              <div className="border-t border-zinc-900 pt-6 space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-widest text-white">Create Walk-in Booking Request</h4>
+                <form onSubmit={handleWalkInBooking} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] text-zinc-500 uppercase tracking-widest block">Select Class</label>
+                      <select
+                        value={walkInClassId}
+                        onChange={(e) => {
+                          setWalkInClassId(e.target.value);
+                          setWalkInSpotNumber(1);
+                        }}
+                        className="w-full bg-[#1C1C1C] border border-zinc-800 text-xs text-white px-3 py-2.5 focus:outline-none focus:border-[#C9A961] rounded-sm"
+                      >
+                        <option value="">-- Choose Class --</option>
+                        {classes.map(c => (
+                          <option key={c.id} value={c.id}>
+                            {c.title} ({c.time} &bull; {formatDate(c.date)})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] text-zinc-500 uppercase tracking-widest block">Rig/Mat Spot</label>
+                      <select
+                        value={walkInSpotNumber}
+                        onChange={(e) => setWalkInSpotNumber(parseInt(e.target.value) || 1)}
+                        className="w-full bg-[#1C1C1C] border border-zinc-800 text-xs text-white px-3 py-2.5 focus:outline-none focus:border-[#C9A961] rounded-sm"
+                        disabled={!walkInClassId}
+                      >
+                        {availableSpotsForSelectedClass.length === 0 ? (
+                          <option value="">No spots available</option>
+                        ) : (
+                          availableSpotsForSelectedClass.map(s => (
+                            <option key={s} value={s}>Spot #{s}</option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] text-zinc-500 uppercase tracking-widest block">Client Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={walkInClientName}
+                        onChange={(e) => setWalkInClientName(e.target.value)}
+                        placeholder="e.g. Juan dela Cruz"
+                        className="w-full bg-[#1C1C1C] border border-zinc-800 text-xs text-white px-3 py-2 focus:outline-none focus:border-[#C9A961] rounded-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] text-zinc-500 uppercase tracking-widest block">Client Email</label>
+                      <input
+                        type="email"
+                        required
+                        value={walkInClientEmail}
+                        onChange={(e) => setWalkInClientEmail(e.target.value)}
+                        placeholder="e.g. juan@gmail.com"
+                        className="w-full bg-[#1C1C1C] border border-zinc-800 text-xs text-white px-3 py-2 focus:outline-none focus:border-[#C9A961] rounded-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] text-zinc-500 uppercase tracking-widest block">Payment Method</label>
+                      <select
+                        value={walkInPaymentMethod}
+                        onChange={(e) => setWalkInPaymentMethod(e.target.value as any)}
+                        className="w-full bg-[#1C1C1C] border border-zinc-800 text-xs text-white px-3 py-2 focus:outline-none focus:border-[#C9A961] rounded-sm"
+                      >
+                        <option value="cash">Cash</option>
+                        <option value="card">Card</option>
+                        <option value="credit">Credit Balance</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white text-xs font-black uppercase tracking-widest rounded-sm transition-all"
+                  >
+                    Submit Pending Walk-in Request
+                  </button>
+                </form>
+              </div>
+            </div>
 
             {/* Testimonials Management Console */}
             <div className="bg-[#121212] border border-zinc-900 rounded-2xl p-6 space-y-6">

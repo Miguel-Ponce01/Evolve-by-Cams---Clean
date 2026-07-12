@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
   const ALLOWED_IPS = ['127.0.0.1', '::1', '192.168.1.100']; // Dev IP Whitelist
   
   const path = request.nextUrl.pathname;
-  const clientIp = request.ip || request.headers.get('x-forwarded-for') || '';
+  const clientIp = (request as any).ip || request.headers.get('x-forwarded-for') || '';
   const bypassHeader = request.headers.get('x-dev-bypass');
 
   // Trigger Maintenance Mode Lockout if flag is active and bypass rules do not match

@@ -207,10 +207,7 @@ export function Navbar() {
                           </p>
                           {[
                             { label: 'Class Booking', href: '/book' },
-                            { label: 'Client Dashboard', href: '/dashboard' },
-                            { label: 'My Profile', href: '/profile' },
                             { label: 'Memberships & Packs', href: '/memberships' },
-                            { label: 'Wallet & Transactions', href: '/wallet' },
                           ].map(link => (
                             <Link
                               key={link.href}

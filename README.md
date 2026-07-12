@@ -1,6 +1,6 @@
 # Evolve by Cams — Studio Operations & Booking Console
 
-Welcome to the comprehensive, master developer guide and system overview for the **Evolve by Cams** Pilates & Wellness Studio platform. This document outlines the decoupled architecture, concrete database schemas, native database constraints, and the honest integration status of each subsystem.
+Welcome to the comprehensive, master developer guide and system overview for the **Evolve by Cams** Pilates & Wellness Studio platform. This document outlines the decoupled architecture, concrete database schemas, native database constraints, test credentials, and the integration status of each subsystem.
 
 ---
 
@@ -10,17 +10,34 @@ To ensure absolute transparency across stakeholders and development cycles, the 
 
 | System / Feature | Integration Level | Technical Implementation Detail |
 | :--- | :--- | :--- |
-| **Authentication** | **Fully Secured** | Live login UI exists at `/admin` supporting default admin `admin@crtl.com` email. Server-side `src/middleware.ts` forces redirect to login page for all admin-exclusive routes (`/portal`, `/roster`, `/schedule`, `/analytics`, `/wallet`, `/profile`). |
+| **Authentication (Client)** | **Figma UI & Bypass** | Premium state-driven Login/Signup portal matching Figma designs. To bypass Supabase SMTP and registration rate limits, test student credentials (`teststudent@evolve.studio` / `password123`) log in via a local simulated session. |
+| **Authentication (Admin)** | **Simulated Access** | Live admin login UI exists at `/admin` supporting default admin `admin@crtl.com` with `admin123`. Server-side `src/middleware.ts` guards Vercel/Next.js routes. |
 | **System Security** | **Active Guard** | Suppressed F12, Right-Click, and standard DevTools key combinations, with background interval console clearance to prevent code leaks. |
-| **Database Migrations** | **Migrated (Local Schema)** | The SQL migrations (`/supabase/migrations`) contain the complete relational schemas, indexes, and triggers, but frontend React contexts currently write to `localStorage` mock stores. |
-| **Roster Booking Map** | **Simulated / Client-Side** | Booking map (`ReformerMap.tsx`) and rig points (A1-A5) are loaded dynamically from state. Storing, cancellation, and waitlist allocations are simulated in memory/storage. |
+| **Booking Approvals** | **Fully Integrated** | Card/cash bookings default to a new `'pending'` state. Staff can approve pending bookings and settle balances from the Admin Portal (`/portal`) or directly via Roster check-ins (`/roster`). |
+| **Terminal Fallback** | **Robust Offline Mode** | The public Booking Terminal (`/book/[classId]`) attempts connection to Supabase Auth & Database triggers. If the remote database is offline/unmigrated, it gracefully falls back to localStorage/local seeds, keeping the terminal 100% testable. |
 | **Tuesday Lockout** | **Fully Enforced (JS & DB)** | Prevented on the Next.js calendar (`BookingCalendarPage`) using JS timezone helpers (`Asia/Manila` checks) and protected at the database layer via triggers. |
 | **Payments (PayMongo)** | **Simulated / Client-Side Mock** | Top-ups and checkouts simulate success instantly. Deno edge functions for PayMongo checkout sessions exist under `/supabase/functions` but are not yet deployed or wired. |
 | **Stripe Terminal** | **Not Started** | Connection code for BBPOS WisePOS E readers to the POS front-desk terminal has not yet been started. |
 
 ---
 
-## 🏗️ 2. Decoupled Global System Architecture
+## 🔑 2. Testing Credentials
+
+For local testing, verification, and staging demonstrations:
+
+### Student Portal & Booking Terminal
+Use these to log in through the student login portal (`/login`):
+* **Email:** `teststudent@evolve.studio`
+* **Password:** `password123`
+
+### Administrative Web Portal
+Use these to access the manager dashboard (`/admin`):
+* **Email:** `admin@crtl.com`
+* **Password:** `admin123`
+
+---
+
+## 🏗️ 3. Decoupled Global System Architecture
 
 To prevent static export conflicts and support dynamic routing, the system separates administrative workflows from client mobile apps while mapping to a unified Supabase hub.
 
@@ -66,7 +83,7 @@ graph TD
 
 ---
 
-## 🗄️ 3. Concrete Production Database Schema
+## 🗄️ 4. Concrete Production Database Schema
 
 The core relational structure is defined in SQL below to prevent overbookings and track package balances:
 
@@ -167,7 +184,7 @@ CREATE TABLE public.bookings (
 
 ---
 
-## 🔒 4. Server-Side Safety Triggers & Strict Business Rules
+## 🔒 5. Server-Side Safety Triggers & Strict Business Rules
 
 To run a secure, robust studio ecosystem, operational boundaries are written natively inside PostgreSQL:
 
@@ -275,7 +292,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 ---
 
-## 🚀 5. Setup & Local Execution
+## 🚀 6. Setup & Local Execution
 
 ### 1. Restore Dependencies
 ```powershell

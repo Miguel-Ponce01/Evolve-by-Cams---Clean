@@ -1,8 +1,8 @@
 // supabase/functions/create-checkout/index.ts
-// Creates a PayMongo Checkout Session for wallet credit top-ups.
-// Supports: GCash, Maya, Card, and QR Ph payments in Philippines PHP currency.
+// Creates a Stripe Checkout Session for Evolve Studio based on the blueprint specifications.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import Stripe from 'https://esm.sh/stripe@14.16.0?target=deno'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,72 +10,64 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS options
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { amount, customer_email, customer_name, customer_phone, redirect_url } = await req.json()
+    const { amount, customer_email, mode, price_id, product_name } = await req.json()
 
-    if (!amount || !customer_email) {
-      return new Response(JSON.stringify({ error: "Missing required parameters: amount, customer_email" }), {
+    if (!customer_email) {
+      return new Response(JSON.stringify({ error: "Missing required parameter: customer_email" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       })
     }
 
-    const paymongoSecretKey = Deno.env.get('PAYMONGO_SECRET_KEY') ?? ""
-    if (!paymongoSecretKey) {
-      throw new Error("PayMongo Secret Key not configured in edge function environment.")
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') ?? ""
+    if (!stripeSecretKey) {
+      throw new Error("Stripe Secret Key not configured in edge function environment.")
     }
 
-    // Convert amount in PHP to centavos (1 PHP = 100 centavos)
-    const amountInCentavos = Math.round(amount * 100)
-
-    // Base64 encode PayMongo secret key for Basic Auth Header
-    const authHeader = `Basic ${btoa(paymongoSecretKey + ":")}`
-
-    const response = await fetch('https://api.paymongo.com/v1/checkout_sessions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authHeader,
-      },
-      body: JSON.stringify({
-        data: {
-          attributes: {
-            billing: {
-              email: customer_email,
-              name: customer_name || 'Client',
-              phone: customer_phone || undefined,
-            },
-            line_items: [
-              {
-                amount: amountInCentavos,
-                currency: 'PHP',
-                name: 'Evolve Loyalty Credits Bundle',
-                quantity: 1,
-              }
-            ],
-            payment_method_types: ['gcash', 'paymaya', 'card', 'qrph'],
-            success_url: redirect_url || 'https://evolve.studio/dashboard?status=success',
-            cancel_url: redirect_url || 'https://evolve.studio/dashboard?status=cancelled',
-            description: `Top-up transaction for Evolve Studio Loyalty wallet.`,
-          }
-        }
-      })
+    // Initialize Stripe client without specifying apiVersion per blueprint instructions
+    const stripe = new Stripe(stripeSecretKey, {
+      httpClient: Stripe.createFetchHttpClient(),
     })
 
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(`PayMongo API error: ${data.errors?.[0]?.detail || 'Unknown error'}`)
+    const checkoutMode = mode || 'payment'
+
+    let finalPriceId = price_id
+
+    // If no price_id is provided, we create a product and pricing dynamically matching the blueprint specs
+    if (!finalPriceId) {
+      const product = await stripe.products.create({
+        name: product_name || 'Example Product',
+        default_price_data: {
+          currency: 'usd',
+          unit_amount: amount ? Math.round(amount * 100) : 2000,
+        }
+      })
+      finalPriceId = product.default_price as string
     }
 
-    const checkoutUrl = data.data.attributes.checkout_url
-    const checkoutSessionId = data.data.id
+    // Create a Checkout Session matching the blueprint parameters
+    const session = await stripe.checkout.sessions.create({
+      line_items: [
+        {
+          price: finalPriceId,
+          quantity: 1,
+        },
+      ],
+      mode: checkoutMode,
+      customer_email: customer_email,
+      success_url: "https://dashboard.stripe.com/workbench/blueprints/one-time-payment/checkout-chapter?confirmation-redirect=create-checkout-session",
+      cancel_url: "https://dashboard.stripe.com/workbench/blueprints/one-time-payment/checkout-chapter?confirmation-redirect=create-checkout-session",
+      metadata: {
+        customer_email: customer_email,
+      }
+    })
 
-    return new Response(JSON.stringify({ checkout_url: checkoutUrl, session_id: checkoutSessionId }), {
+    return new Response(JSON.stringify({ checkout_url: session.url, session_id: session.id }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     })

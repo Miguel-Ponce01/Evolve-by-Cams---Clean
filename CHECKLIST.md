@@ -39,10 +39,14 @@
 
 ## 🔴 Remaining Tasks (Production Launch)
 
-- [ ] **Deploy Edge Functions** — Deploy `notify-instructor`, `create-checkout`, and `paymongo-webhook` to production Supabase Cloud.
-- [ ] **Stripe Terminal integration** — Connect BBPOS WisePOS E readers to the POS terminal dashboard.
+*All initial phase features are deployed and completed.*
 
 ## ✅ Completed (Evolve Studio v2 Upgrade)
 
+- [x] **Stripe Terminal integration** — Connected BBPOS WisePOS E readers to the POS terminal dashboard.
+- [x] **Deploy Edge Functions** — Deployed `notify-instructor`, `create-checkout`, and `stripe-webhook` to production Supabase Cloud.
+- [x] **Database Security Hardening** — Created database migration script `0014_database_security_hardening.sql` to revoke public execute privileges on security definer functions, resolving Supabase Security Advisor warnings.
+- [x] **Stripe Checkout Migration** — Replaced PayMongo edge functions with Stripe Checkout sessions and Stripe webhooks.
 - [x] **Auth Signups Integration** — Replaced mock auth states with live Supabase Magic Link and SMS OTP redirects.
+
 

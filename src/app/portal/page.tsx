@@ -15,7 +15,9 @@ import {
   UserCheck,
   TrendingUp,
   UserPlus,
-  Edit3
+  Edit3,
+  QrCode,
+  Search
 } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
 import Link from 'next/link';
@@ -32,7 +34,8 @@ export default function AdminPortal() {
     bookSpot,
     testimonials,
     updateTestimonial,
-    confirmBooking
+    confirmBooking,
+    checkInBooking
   } = useBooking();
 
   // Selected client for manual balance override
@@ -180,6 +183,30 @@ export default function AdminPortal() {
       });
     } else {
       alert(`Override Booking Failed: ${bookingResult.message}`);
+    }
+  };
+
+  // QR Scan Check-In state
+  const [qrScanInput, setQrScanInput] = useState<string>('');
+  const [qrScanError, setQrScanError] = useState<string>('');
+  const [qrScanSuccess, setQrScanSuccess] = useState<string>('');
+
+  const handleQrScanSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setQrScanError('');
+    setQrScanSuccess('');
+
+    if (!qrScanInput) return;
+
+    const res = checkInBooking(qrScanInput);
+    if (res.success) {
+      setQrScanSuccess(res.message);
+      setQrScanInput('');
+      // Clear alerts after a few seconds
+      setTimeout(() => setQrScanSuccess(''), 4000);
+    } else {
+      setQrScanError(res.message);
+      setTimeout(() => setQrScanError(''), 4000);
     }
   };
 
@@ -526,6 +553,96 @@ export default function AdminPortal() {
           {/* Right Column (Presence & Live Ticker) */}
           <div className="lg:col-span-2 space-y-8">
             
+            {/* Entrance Gate QR Scanner Console */}
+            <div className="bg-[#121212] border border-zinc-900 rounded-2xl p-6 space-y-6">
+              <div className="flex justify-between items-center border-b border-zinc-900 pb-3">
+                <h3 className="text-base font-black uppercase tracking-widest flex items-center gap-2 text-[#C9A961]">
+                  <QrCode size={18} />
+                  ENTRANCE QR SCANNER
+                </h3>
+                <span className="text-[10px] text-zinc-500 font-mono">Gate Attendance</span>
+              </div>
+
+              <p className="text-[10px] text-zinc-500">
+                Scan client booking tickets or enter a Booking ID manually to instantly authorize attendance and log their check-in.
+              </p>
+
+              {/* ID Manual Entry Form */}
+              <form onSubmit={handleQrScanSubmit} className="space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Scan or Enter Booking ID (e.g. bk-1)..."
+                    value={qrScanInput}
+                    onChange={(e) => setQrScanInput(e.target.value)}
+                    className="w-full bg-[#1C1C1C] border border-zinc-800 text-xs text-white pl-9 pr-4 py-2.5 focus:outline-none focus:border-[#C9A961] rounded-sm font-mono"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="w-full py-2.5 bg-[#C9A961] hover:bg-[#b09352] text-black text-[10px] font-black uppercase tracking-widest rounded-sm transition-all cursor-pointer"
+                >
+                  Verify Ticket &amp; Check In
+                </button>
+              </form>
+
+              {/* Feedbacks */}
+              {qrScanError && (
+                <div className="p-3 bg-red-950/20 border border-red-900/30 text-red-400 rounded-lg text-[10px] leading-normal">
+                  ⚠️ {qrScanError}
+                </div>
+              )}
+
+              {qrScanSuccess && (
+                <div className="p-3 bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 rounded-lg text-[10px] leading-normal">
+                  ✓ {qrScanSuccess}
+                </div>
+              )}
+
+              {/* Quick Scan Roster List */}
+              <div className="space-y-3 pt-2 border-t border-zinc-900">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Scan Simulator (Today's Roster)</h4>
+                <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
+                  {bookings.filter(b => b.status === 'upcoming' || b.status === 'booked').length === 0 ? (
+                    <p className="text-[10px] text-zinc-600 font-mono text-center py-2">NO UNCLAIMED BOOKINGS TODAY</p>
+                  ) : (
+                    bookings.filter(b => b.status === 'upcoming' || b.status === 'booked').map(b => {
+                      const cls = classes.find(c => c.id === b.classId);
+                      return (
+                        <div key={b.id} className="flex justify-between items-center p-2.5 bg-[#1C1C1C] border border-zinc-850 rounded-lg text-[10px]">
+                          <div>
+                            <p className="font-bold text-white">{b.customerName}</p>
+                            <p className="text-zinc-500 font-mono text-[8px] mt-0.5">{cls?.title || 'Class'} (Spot #{b.spotNumber})</p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setQrScanInput(b.id);
+                              // Trigger auto-submit simulation
+                              setTimeout(() => {
+                                const res = checkInBooking(b.id);
+                                if (res.success) {
+                                  setQrScanSuccess(res.message);
+                                  setQrScanInput('');
+                                  setTimeout(() => setQrScanSuccess(''), 4000);
+                                } else {
+                                  setQrScanError(res.message);
+                                  setTimeout(() => setQrScanError(''), 4000);
+                                }
+                              }, 100);
+                            }}
+                            className="px-2 py-1 bg-zinc-900 hover:bg-zinc-850 text-[#C9A961] border border-zinc-800 rounded font-black uppercase tracking-wider text-[8px] cursor-pointer"
+                          >
+                            Simulate Scan
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Terminal Realtime Presence */}
             <div className="bg-[#121212] border border-zinc-900 rounded-2xl p-6 space-y-6">
               <h3 className="text-base font-black uppercase tracking-widest flex items-center gap-2 text-white">

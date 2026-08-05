@@ -8,7 +8,7 @@ export function Footer() {
   return (
     <footer className="bg-[#090909] border-t border-zinc-900/60 py-20 text-zinc-400 relative z-10 text-left">
       <div className="max-w-[1240px] mx-auto px-6 space-y-16">
-        
+
         {/* Top Brand Logo Row */}
         <div className="flex flex-col items-start gap-2 select-none border-b border-zinc-900/40 pb-8">
           <span className="text-3xl font-serif font-light tracking-[0.3em] text-white uppercase leading-none">
@@ -21,7 +21,7 @@ export function Footer() {
 
         {/* Content Columns Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 text-xs leading-relaxed font-semibold">
-          
+
           <div className="space-y-4">
             <span className="text-[10px] font-black uppercase tracking-widest text-[#C9A961] block">Branch &amp; Contact</span>
             <div className="space-y-3 text-zinc-300">
@@ -40,12 +40,12 @@ export function Footer() {
             <span className="text-[10px] font-black uppercase tracking-widest text-[#C9A961] block">Opening Hours</span>
             <div className="space-y-2 text-zinc-355 font-mono">
               <div className="flex justify-between border-b border-zinc-900/40 pb-1">
-                <span>MON - FRI:</span>
-                <span className="text-white">7:00 - 21:00</span>
+                <span>MON - FRI (Closed Tue):</span>
+                <span className="text-white">9:00 AM - 9:00 PM</span>
               </div>
               <div className="flex justify-between border-b border-zinc-900/40 pb-1">
                 <span>SATURDAY:</span>
-                <span className="text-white">8:00 - 18:00</span>
+                <span className="text-white">9:00 AM - 5:00 PM</span>
               </div>
               <div className="flex justify-between border-b border-zinc-900/40 pb-1">
                 <span>SUNDAY:</span>
@@ -58,19 +58,19 @@ export function Footer() {
             <span className="text-[10px] font-black uppercase tracking-widest text-[#C9A961] block">Connect With Us</span>
             <p className="text-zinc-400 text-pretty">Follow our social channels to join the community, view student highlights, and track upcoming studio sessions.</p>
             <div className="flex gap-3 pt-2">
-              <a 
-                href="https://instagram.com/evolvepolefitness" 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <a
+                href="https://instagram.com/evolvepolefitness"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-black hover:bg-[#C9A961] hover:border-[#C9A961] transition-all active:scale-[0.96] duration-300"
                 aria-label="Follow Evolve Pole Fitness on Instagram"
               >
                 <Instagram size={18} />
               </a>
-              <a 
-                href="https://www.facebook.com/EvolvePoleFitness/" 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <a
+                href="https://www.facebook.com/EvolvePoleFitness/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-black hover:bg-[#C9A961] hover:border-[#C9A961] transition-all active:scale-[0.96] duration-300"
                 aria-label="Follow Evolve Pole Fitness on Facebook"
               >

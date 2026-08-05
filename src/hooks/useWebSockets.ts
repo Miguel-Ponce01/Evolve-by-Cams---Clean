@@ -11,8 +11,15 @@ export interface SocketMessage {
 export function useWebSockets(onMessageReceived?: (msg: SocketMessage) => void) {
   const [connected, setConnected] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
-  
+
   const channelRef = useRef<BroadcastChannel | null>(null);
+  // BUG 6 FIX: Store the callback in a ref so the effect never re-fires when
+  // the parent passes a new function reference. Without this, every state
+  // change in BookingContext recreated the BroadcastChannel.
+  const onMessageRef = useRef(onMessageReceived);
+  useEffect(() => {
+    onMessageRef.current = onMessageReceived;
+  });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -33,9 +40,7 @@ export function useWebSockets(onMessageReceived?: (msg: SocketMessage) => void) 
     const handleMessage = (event: MessageEvent) => {
       const msg = event.data as SocketMessage;
       if (msg && msg.senderId !== sid) {
-        if (onMessageReceived) {
-          onMessageReceived(msg);
-        }
+        onMessageRef.current?.(msg);
       }
     };
 
@@ -46,7 +51,7 @@ export function useWebSockets(onMessageReceived?: (msg: SocketMessage) => void) 
       channel.close();
       setConnected(false);
     };
-  }, [onMessageReceived]);
+  }, []); // empty deps — stable channel for the lifetime of the component
 
   const sendMessage = useCallback((type: SocketMessage['type'], payload: any) => {
     if (!channelRef.current || !sessionId) return;

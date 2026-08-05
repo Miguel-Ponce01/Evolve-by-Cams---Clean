@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useBooking } from '@/context/BookingContext';
 import { INSTRUCTORS } from '@/lib/seedData';
 import {
@@ -313,6 +313,39 @@ function Section({ title, icon, children }: { title: string; icon: React.ReactNo
 
 export default function AnalyticsPage() {
   const { transactions, bookings, classes, customers } = useBooking();
+  const [clientLeaderboardCategory, setClientLeaderboardCategory] = useState<string>('All');
+
+  const categoriesList = ['All', 'Pole Fitness', 'Aerial Sling', 'Sexy Chair', 'Yoga', 'Aerial Sling Kids'];
+
+  const categoryLeaderboard = useMemo(() => {
+    const counts: Record<string, { name: string; email: string; count: number; tier: string }> = {};
+    
+    bookings
+      .filter(b => b.status !== 'cancelled')
+      .forEach(b => {
+        const cls = classes.find(c => c.id === b.classId);
+        if (!cls) return;
+        
+        if (clientLeaderboardCategory !== 'All' && cls.type !== clientLeaderboardCategory) {
+          return;
+        }
+        
+        if (!counts[b.customerEmail]) {
+          const cust = customers.find(c => c.email.toLowerCase() === b.customerEmail.toLowerCase());
+          counts[b.customerEmail] = {
+            name: b.customerName,
+            email: b.customerEmail,
+            count: 0,
+            tier: cust?.membershipTier ?? '—',
+          };
+        }
+        counts[b.customerEmail].count += 1;
+      });
+
+    return Object.values(counts)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [bookings, classes, customers, clientLeaderboardCategory]);
 
   // ── Date helpers ──────────────────────────────────────────────────────────
   const now = new Date();
@@ -577,22 +610,40 @@ export default function AnalyticsPage() {
         {/* ── TWO-COLUMN: LTV + RETENTION ───────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* Top 5 LTV */}
-          <Section title="Top 5 Clients by LTV" icon={<Star size={14} />}>
-            {analytics.top5LTV.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic text-center py-8">No transaction data yet.</p>
+          {/* Top 5 Clients Leaderboard */}
+          <Section title="Top 5 Clients Leaderboard" icon={<Star size={14} />}>
+            {/* Category selection tabs */}
+            <div className="flex flex-wrap gap-1.5 mb-4 bg-secondary/30 p-1 rounded-xl border border-border">
+              {categoriesList.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setClientLeaderboardCategory(cat)}
+                  className={cn(
+                    "px-3 py-1 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer",
+                    clientLeaderboardCategory === cat 
+                      ? "bg-[#C9A961] text-black" 
+                      : "text-zinc-400 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  {cat === 'All' ? 'All' : cat.replace('Fitness', '').replace('Aerial', '').trim()}
+                </button>
+              ))}
+            </div>
+
+            {categoryLeaderboard.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic text-center py-8">No class bookings in this category.</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-xs" aria-label="Top 5 clients by lifetime value">
+                <table className="w-full text-xs" aria-label="Top 5 clients leaderboard by class bookings">
                   <thead>
                     <tr className="border-b border-border">
-                      {['#', 'Client', 'Tier', 'Spent', 'Classes'].map(h => (
+                      {['#', 'Client', 'Tier', 'Bookings'].map(h => (
                         <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-muted-foreground pb-2 pr-3">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
-                    {analytics.top5LTV.map((c, i) => (
+                    {categoryLeaderboard.map((c, i) => (
                       <tr key={c.email} className="hover:bg-secondary/30 transition-colors">
                         <td className="py-2.5 pr-3">
                           <span className={cn(
@@ -614,8 +665,7 @@ export default function AnalyticsPage() {
                             {c.tier}
                           </span>
                         </td>
-                        <td className="py-2.5 pr-3 font-black text-foreground text-[11px]">{formatPHP(c.total)}</td>
-                        <td className="py-2.5 text-muted-foreground text-[11px] font-bold">{c.classesAttended}</td>
+                        <td className="py-2.5 text-muted-foreground text-[11px] font-black">{c.count} classes</td>
                       </tr>
                     ))}
                   </tbody>

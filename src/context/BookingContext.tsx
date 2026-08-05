@@ -89,14 +89,19 @@ interface BookingContextType {
   updateEvent: (eventId: string, updates: Partial<Omit<StudioEvent, 'id'>>) => void;
   deleteEvent: (eventId: string) => { success: boolean; message: string };
   testimonials: Testimonial[];
-  updateTestimonial: (index: number, updates: Partial<Testimonial>) => void;
+  updateTestimonial: (id: string, status: 'approved' | 'pending') => void;
 }
 
 export interface Testimonial {
+  id: string;
   name: string;
-  role: string;
-  text: string;
+  discipline: string;
+  quote: string;
+  status: 'approved' | 'pending';
   rating: number;
+  // Legacy aliases (kept for backward-compat with old localStorage)
+  role?: string;
+  text?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -399,9 +404,13 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     const savedLocks     = loadFromStorage<SpotLock[]>('evolve_spot_locks', []);
     let savedTransactions = loadFromStorage<Transaction[]>('evolve_transactions', []);
 
-    // Check if classes are outdated (e.g. they contain dates in the past)
+    // BUG 1 + 10 FIX: Only reset if ALL classes are in the past (not just any one),
+    // and handle both legacy .date field and Supabase .starts_at ISO string.
     const todayStr = new Date().toISOString().split('T')[0];
-    const hasOutdatedClasses = savedClasses.length === 0 || savedClasses.some(c => c.date < todayStr);
+    const getClassDateStr = (c: any): string =>
+      c.date ?? c.starts_at?.split('T')[0] ?? '9999-12-31';
+    const hasOutdatedClasses = savedClasses.length === 0 ||
+      savedClasses.every(c => getClassDateStr(c) < todayStr);
 
     let activeClasses = savedClasses;
     let activeBookings = savedBookings;
@@ -420,10 +429,11 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     } else {
       // Auto-generate transaction logs from bookings if transactions are empty
       if (savedTransactions.length === 0 && savedBookings.length > 0) {
-        savedTransactions = savedBookings.map(b => {
+        savedTransactions = savedBookings.map((b, i) => {
           const cls = savedClasses.find(c => c.id === b.classId);
+          // BUG 4 FIX: include map index `i` so IDs are unique even within the same millisecond
           return {
-            id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            id: `tx-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 8)}`,
             type: 'booking',
             timestamp: b.bookedAt,
             customerName: b.customerName,
@@ -442,26 +452,49 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     }
 
     const savedEvents    = loadFromStorage<StudioEvent[]>('evolve_events', SEED_EVENTS);
-    const savedTestimonials = loadFromStorage<Testimonial[]>('evolve_testimonials', [
+    // Migrate stale testimonials that lack the new fields (id, discipline, quote, status)
+    const rawTestimonials = loadFromStorage<Testimonial[]>('evolve_testimonials', []);
+    const needsMigration = rawTestimonials.length === 0 || rawTestimonials.some(t => !t.id || !t.status);
+    const savedTestimonials: Testimonial[] = needsMigration ? [
       {
-        name: "Maria Santos",
-        role: "Member since 2021",
-        text: "Evolve is truly my Happy Place. I came in with zero upper body strength and constant self-doubt. The structure and certification of the coaches here helped me safely build physical strength and, more importantly, confidence I never knew I had.",
-        rating: 5
+        id: 'test-001',
+        name: 'Maria Santos',
+        discipline: 'Pole Fitness',
+        quote: 'Evolve is truly my Happy Place. I came in with zero upper body strength and constant self-doubt. The structure and certification of the coaches here helped me safely build physical strength and, more importantly, confidence I never knew I had.',
+        status: 'approved',
+        rating: 5,
       },
       {
-        name: "Kassandra Ramos",
-        role: "Aerial Silks Enthusiast",
-        text: "The B&W studio aesthetic matches the focus and grace demanded by the aerial silks program. The coaches are incredibly safe, methodical, and certified. Joining the Evolve family completely transformed my fitness path.",
-        rating: 5
+        id: 'test-002',
+        name: 'Kassandra Ramos',
+        discipline: 'Aerial Sling',
+        quote: 'The studio aesthetic matches the focus and grace demanded by the aerial program. The coaches are incredibly safe, methodical, and certified. Joining the Evolve family completely transformed my fitness path.',
+        status: 'approved',
+        rating: 5,
       },
       {
-        name: "Janine De Cruz",
-        role: "Pole Dance Student",
-        text: "If you are looking for a studio that values technique, safety, and encouragement equally, Evolve is it. No matter your shape or size, you are welcomed with open arms. The classes are empowering and extremely fun!",
-        rating: 5
-      }
-    ]);
+        id: 'test-003',
+        name: 'Janine De Cruz',
+        discipline: 'Pole Fitness',
+        quote: 'If you are looking for a studio that values technique, safety, and encouragement equally, Evolve is it. No matter your shape or size, you are welcomed with open arms. The classes are empowering and extremely fun!',
+        status: 'approved',
+        rating: 5,
+      },
+      {
+        id: 'test-004',
+        name: 'Alyssa Reyes',
+        discipline: 'Sexy Chair',
+        quote: 'The Sexy Chair classes completely changed how I see myself. Cams creates the most safe and encouraging environment to express yourself. Every class feels like a performance.',
+        status: 'pending',
+        rating: 5,
+      },
+    ] : rawTestimonials.map((t, i) => ({
+      ...t,
+      id: t.id || `test-legacy-${i}`,
+      discipline: t.discipline || (t.role ?? 'General'),
+      quote: t.quote || (t.text ?? ''),
+      status: t.status || 'approved',
+    }));
 
     setUser(savedAdmin);
     setCustomers(savedCustomers);
@@ -845,100 +878,90 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     }
 
     // ── After a spot opens, auto-promote oldest waitlisted client ─────────
-    // We defer this to a microtask so class state has settled.
+    // BUG 7 FIX: All state setters are now flat sequential calls outside of
+    // each other's updater functions, preventing partial renders and stale
+    // closures caused by nesting setBookings/setCustomers inside setClasses.
     if (cls) {
       setTimeout(() => {
-        setWaitlist(prevWl => {
-          const classQueue = prevWl
-            .filter(w => w.classId === booking.classId)
-            .sort((a, b) => a.joinedAt.localeCompare(b.joinedAt));
+        // Take snapshots from localStorage (which is up-to-date post-cancel)
+        const currentWl   = loadFromStorage<WaitlistEntry[]>('evolve_waitlist',  []);
+        const currentCls  = loadFromStorage<FitnessClass[]>('evolve_classes',    SEED_CLASSES);
 
-          if (classQueue.length === 0) return prevWl;
+        const classQueue = currentWl
+          .filter(w => w.classId === booking.classId)
+          .sort((a, b) => a.joinedAt.localeCompare(b.joinedAt));
 
-          const nextUp = classQueue[0];
+        if (classQueue.length === 0) return;
 
-          // Determine payment method — use held credit if hold is active
-          const payMethod: 'credit' | 'cash' = nextUp.holdCredit ? 'credit' : 'cash';
+        const nextUp = classQueue[0];
+        const targetClass = currentCls.find(c => c.id === booking.classId);
+        if (!targetClass) return;
 
-          // If the hold credit was pre-authorized, restore it first so bookSpot can deduct it
-          if (nextUp.holdCredit) {
-            setCustomers(prev => prev.map(c =>
-              c.email.toLowerCase() === nextUp.customerEmail.toLowerCase()
-                ? { ...c, credits: c.credits + 1 }
-                : c
-            ));
-          }
+        // Find a free spot from the fresh class snapshot
+        let freeSpot = -1;
+        for (let s = 1; s <= targetClass.totalSpots; s++) {
+          if (!targetClass.bookedSpots.includes(s)) { freeSpot = s; break; }
+        }
+        if (freeSpot === -1) return;
 
-          // Find a free spot
-          setClasses(prevCls => {
-            const targetClass = prevCls.find(c => c.id === booking.classId);
-            if (!targetClass) return prevCls;
+        const payMethod: 'credit' | 'cash' = nextUp.holdCredit ? 'credit' : 'cash';
 
-            let freeSpot = -1;
-            for (let s = 1; s <= targetClass.totalSpots; s++) {
-              if (!targetClass.bookedSpots.includes(s)) { freeSpot = s; break; }
-            }
-            if (freeSpot === -1) return prevCls;
+        // Build the promoted booking
+        const promotedBooking: Booking = {
+          id:            `booking-${Date.now()}`,
+          classId:       booking.classId,
+          spotNumber:    freeSpot,
+          bookedAt:      new Date().toISOString(),
+          paymentMethod: payMethod,
+          amountPaid:    0,
+          status:        'upcoming',
+          customerName:  nextUp.customerName,
+          customerEmail: nextUp.customerEmail,
+          customerPhone: nextUp.customerPhone,
+        };
 
-            // Build the promoted booking
-            const promotedBooking: Booking = {
-              id:            `booking-${Date.now()}`,
-              classId:       booking.classId,
-              spotNumber:    freeSpot,
-              bookedAt:      new Date().toISOString(),
-              paymentMethod: payMethod,
-              amountPaid:    0, // credit or zero — settled in-context
-              status:        'upcoming',
-              customerName:  nextUp.customerName,
-              customerEmail: nextUp.customerEmail,
-              customerPhone: nextUp.customerPhone,
-            };
+        const promotedTx: Transaction = {
+          id: `tx-${Date.now()}-p-${Math.random().toString(36).substring(2, 8)}`,
+          type: 'booking',
+          timestamp: new Date().toISOString(),
+          customerName: nextUp.customerName,
+          customerEmail: nextUp.customerEmail,
+          customerPhone: nextUp.customerPhone,
+          description: `${targetClass.title} (Spot #${freeSpot})`,
+          paymentMethod: payMethod,
+          amount: 0,
+          status: 'paid',
+          bookingId: promotedBooking.id,
+        };
 
-            // Deduct credit if used
-            if (payMethod === 'credit') {
-              setCustomers(prev => prev.map(c =>
-                c.email.toLowerCase() === nextUp.customerEmail.toLowerCase()
-                  ? { ...c, credits: c.credits - 1 }
-                  : c
-              ));
-            }
-
-            setBookings(prev => [...prev, promotedBooking]);
-            const promotedTx: Transaction = {
-              id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-              type: 'booking',
-              timestamp: new Date().toISOString(),
-              customerName: nextUp.customerName,
-              customerEmail: nextUp.customerEmail,
-              customerPhone: nextUp.customerPhone,
-              description: `${targetClass.title} (Spot #${freeSpot})`,
-              paymentMethod: payMethod,
-              amount: 0,
-              status: 'paid',
-              bookingId: promotedBooking.id,
-            };
-            setTransactions(prev => [promotedTx, ...prev]);
-            sendMessage('BOOKING_CREATED', { booking: promotedBooking });
-
-            return prevCls.map(c =>
-              c.id === booking.classId
-                ? { ...c, bookedSpots: [...c.bookedSpots, freeSpot] }
-                : c
-            );
-          });
-
-          // Remove promoted client from waitlist
-          return prevWl.filter(
-            w => !(w.classId === booking.classId &&
-              w.customerEmail.toLowerCase() === nextUp.customerEmail.toLowerCase())
-          );
-        });
+        // Apply all state changes as flat, sequential calls — no nesting
+        if (nextUp.holdCredit) {
+          // Restore pre-authorized hold, then immediately re-deduct for the booking
+          setCustomers(prev => prev.map(c =>
+            c.email.toLowerCase() === nextUp.customerEmail.toLowerCase()
+              ? { ...c, credits: c.credits + 1 - 1 } // net zero: restore hold, deduct for booking
+              : c
+          ));
+        }
+        setClasses(prev => prev.map(c =>
+          c.id === booking.classId
+            ? { ...c, bookedSpots: [...c.bookedSpots, freeSpot] }
+            : c
+        ));
+        setBookings(prev => [...prev, promotedBooking]);
+        setTransactions(prev => [promotedTx, ...prev]);
+        setWaitlist(prev => prev.filter(
+          w => !(w.classId === booking.classId &&
+            w.customerEmail.toLowerCase() === nextUp.customerEmail.toLowerCase())
+        ));
+        sendMessage('BOOKING_CREATED', { booking: promotedBooking });
       }, 0);
     }
 
-    if (!cls) return { success: true, message: 'Booking cancelled.' };
-    if (creditRefund) return { success: true, message: 'Early cancellation — 1 credit refunded.' };
-    return { success: true, message: 'Late cancellation (<12 h) — no credit refund retained.' };
+    // BUG 8 FIX: Return accurate messages covering the !cls+creditRefund edge case
+    if (!cls) return { success: true, message: creditRefund ? 'Booking cancelled — 1 credit has been refunded.' : 'Booking cancelled.' };
+    if (creditRefund) return { success: true, message: 'Early cancellation — 1 credit has been refunded.' };
+    return { success: true, message: 'Late cancellation (< 12 h) — no refund issued per studio policy.' };
   }, [bookings, classes, sendMessage]);
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1243,13 +1266,11 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     return { success: true, message: 'Event deleted successfully.' };
   }, []);
 
-  const updateTestimonial = useCallback((index: number, updates: Partial<Testimonial>) => {
+  const updateTestimonial = useCallback((id: string, status: 'approved' | 'pending') => {
     setTestimonials(prev => {
-      const copy = [...prev];
-      if (copy[index]) {
-        copy[index] = { ...copy[index], ...updates };
-      }
-      return copy;
+      const next = prev.map(t => t.id === id ? { ...t, status } : t);
+      saveToStorage('evolve_testimonials', next);
+      return next;
     });
   }, []);
 

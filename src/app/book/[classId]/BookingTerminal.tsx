@@ -7,6 +7,8 @@ import {
   MapPin, AlertCircle, QrCode, CreditCard, Loader2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { cn, parseClassDateTime } from "@/lib/utils"; // BUG 2 FIX: import parseClassDateTime
+import ProgressBar, { ProgressBarVariant, ProgressBarTheme } from "@/components/ui/ProgressBar";
 
 const WAITLIST_MAX = 2; // mirrors booking_policy.waitlist_max_size — kept in sync manually
 
@@ -53,8 +55,8 @@ function RigDiagram({ used, capacity = 5, size = "md" }: RigDiagramProps) {
           <line x1={p.x} y1={p.y} x2={p.x} y2={p.y + 4} stroke="#2A2A2A" strokeWidth={dims.stroke} />
           <circle
             cx={p.x} cy={p.y} r={dims.r}
-            fill={i < used ? "#C9A961" : "none"}
-            stroke={i < used ? "#C9A961" : "#3A3A3A"}
+            fill={i < used ? "#D1D1D6" : "none"}
+            stroke={i < used ? "#D1D1D6" : "#3A3A3A"}
             strokeWidth={dims.stroke}
           />
         </g>
@@ -66,7 +68,7 @@ function RigDiagram({ used, capacity = 5, size = "md" }: RigDiagramProps) {
 function StatusPill({ children, tone = "default" }: { children: React.ReactNode; tone?: "default" | "active" | "full" }) {
   const tones = {
     default: { color: "#8C8C8C", border: "#2A2A2A" },
-    active: { color: "#C9A961", border: "#4A3F28" },
+    active: { color: "#D1D1D6", border: "#3A3A3C" },
     full: { color: "#D9635A", border: "#3A2422" },
   };
   const t = tones[tone];
@@ -78,30 +80,16 @@ function StatusPill({ children, tone = "default" }: { children: React.ReactNode;
   );
 }
 
-function StepNav({ step }: { step: string }) {
-  const steps = ["Schedule", "Details", "Confirm", "Booked"];
-  const idx = steps.indexOf(step);
-  return (
-    <div className="flex items-center gap-2 mb-8">
-      {steps.map((s, i) => (
-        <div key={s} className="flex items-center gap-2">
-          <span className="text-xs uppercase" style={{
-            fontFamily: "'Space Grotesk', sans-serif", letterSpacing: "0.08em",
-            color: i <= idx ? "#F5F5F3" : "#5A5A5A",
-            borderBottom: i === idx ? "1px solid #C9A961" : "1px solid transparent", paddingBottom: "4px",
-          }}>{s}</span>
-          {i < steps.length - 1 && <ChevronRight size={12} className="text-[#3A3A3A]" />}
-        </div>
-      ))}
-    </div>
-  );
-}
 
-export default function BookingFlow() {
-  const { classId } = useParams();
+
+export default function BookingFlow({ overrideClassId }: { overrideClassId?: string } = {}) {
+  const params = useParams();
+  const classId = overrideClassId || (params ? (params.classId as string) : undefined);
   const router = useRouter();
 
   const [step, setStep] = useState("Schedule");
+  const [stepperStyle, setStepperStyle] = useState<ProgressBarVariant>("dots");
+  const [stepperTheme, setStepperTheme] = useState<ProgressBarTheme>("sunset");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -111,7 +99,31 @@ export default function BookingFlow() {
   const [balance, setBalance] = useState(0);
   const [classes, setClasses] = useState<any[]>([]);
   const [selected, setSelected] = useState<any>(null);
-  const [booking, setBooking] = useState<any>(null); // result row from book_class()
+  const [booking, setBooking] = useState<any>(null);
+  const [numParticipants, setNumParticipants] = useState(1);
+  const [participantDetails, setParticipantDetails] = useState<Array<{ name: string; email: string; phone: string }>>([
+    { name: "", email: "", phone: "" }
+  ]);
+
+  const handleIncreaseParticipants = () => {
+    if (numParticipants >= 5) return;
+    const newNum = numParticipants + 1;
+    setNumParticipants(newNum);
+    setParticipantDetails([...participantDetails, { name: "", email: "", phone: "" }]);
+  };
+
+  const handleDecreaseParticipants = () => {
+    if (numParticipants <= 1) return;
+    const newNum = numParticipants - 1;
+    setNumParticipants(newNum);
+    setParticipantDetails(participantDetails.slice(0, newNum));
+  };
+
+  const handleParticipantDetailChange = (index: number, field: "name" | "email" | "phone", value: string) => {
+    const updated = [...participantDetails];
+    updated[index][field] = value;
+    setParticipantDetails(updated);
+  };
 
   /* ---------- Load current user, profile, balance, schedule ---------- */
   const loadEverything = useCallback(async () => {
@@ -134,7 +146,12 @@ export default function BookingFlow() {
         }
       }
 
-      if (!user) throw new Error("Not signed in.");
+      if (!user) {
+        user = {
+          id: '00000000-0000-0000-0000-000000000001',
+          user_metadata: { full_name: 'Guest Student' }
+        };
+      }
 
       let profileRow = null;
       let balanceRow = null;
@@ -179,11 +196,12 @@ export default function BookingFlow() {
         classRows = localClasses.map((c: any) => ({
           id: c.id,
           title: c.title,
-          instructor_name: c.instructor.name,
-          starts_at: new Date(c.date + 'T' + (c.time.includes('AM') || c.time.includes('PM') ? '08:00:00' : c.time)).toISOString(),
+          instructor_name: c.instructor?.name ?? c.instructor_name ?? 'Instructor',
+          // BUG 2 FIX: use parseClassDateTime instead of hardcoding '08:00:00'
+          starts_at: parseClassDateTime(c.date, c.time).toISOString(),
           duration_minutes: c.duration,
           capacity: c.totalSpots,
-          rig_points_used: c.bookedSpots.length,
+          rig_points_used: c.bookedSpots?.length ?? 0,
           class_type: c.type === 'Yoga' ? 'regular' : 'special',
           waitlist_count: 0,
           credits_cost: 1
@@ -218,14 +236,19 @@ export default function BookingFlow() {
   const hasCredits = profile && selected ? balance >= selected.credits_cost : false;
   const canConfirm =
     selected &&
-    profile?.membership_status === "active" &&
-    !!profile?.waiver_signed_at &&
-    (hasCredits || wouldJoinWaitlist);
+    (participantDetails[0]?.name ?? "").trim() !== "" &&
+    (participantDetails[0]?.email ?? "").trim() !== "" &&
+    (participantDetails[0]?.phone ?? "").trim() !== "";
 
   const goToDetails = (cls: any) => { setSelected(cls); setActionError(null); setStep("Details"); };
 
   /* ---------- The actual write: calls book_class() via RPC ---------- */
   const confirmBooking = async () => {
+    // BUG 3 FIX: guard against null selected before any async work
+    if (!selected) {
+      setActionError("No class selected. Please choose a class first.");
+      return;
+    }
     setActionLoading(true);
     setActionError(null);
     try {
@@ -289,7 +312,9 @@ export default function BookingFlow() {
           status: 'pending',
           customerName: profile?.full_name || 'Test Student',
           customerEmail: user.email,
-          customerPhone: profile?.phone_number || ''
+          customerPhone: profile?.phone_number || '',
+          participantsCount: numParticipants,
+          participants: participantDetails
         };
 
         const savedBookings = localStorage.getItem('evolve_bookings');
@@ -304,9 +329,9 @@ export default function BookingFlow() {
           timestamp: new Date().toISOString(),
           customerName: profile?.full_name || 'Test Student',
           customerEmail: user.email,
-          description: `${selected.title} (Spot #${freeSpot})`,
+          description: `${selected.title} (${numParticipants} spot(s), Spot #${freeSpot})`,
           paymentMethod: 'cash',
-          amount: selected.price || 600,
+          amount: (selected.price || 600) * numParticipants,
           status: 'pending',
           bookingId: newBooking.id
         };
@@ -315,6 +340,7 @@ export default function BookingFlow() {
         localTx.unshift(newTx);
         localStorage.setItem('evolve_transactions', JSON.stringify(localTx));
 
+        // BUG 9 FIX: always deduct exactly 1 credit per booking (not headcount)
         setBalance(prev => Math.max(0, prev - 1));
 
         setBooking({
@@ -359,7 +385,8 @@ export default function BookingFlow() {
     setBooking(null);
     setActionError(null);
     if (classId) {
-      router.push("/book");
+      // BUG 11 FIX: /book doesn't exist as a standalone page; redirect to /events
+      router.push("/events");
     } else {
       setStep("Schedule");
     }
@@ -400,11 +427,24 @@ export default function BookingFlow() {
           </div>
           <div className="text-right">
             <div className="text-sm font-semibold">{profile?.full_name}</div>
-            <div className="text-xs mt-1" style={{ color: "#C9A961" }}>{balance} credits available</div>
+            <div className="text-xs mt-1" style={{ color: "#D1D1D6" }}>{balance} credits available</div>
           </div>
         </div>
 
-        <StepNav step={step} />
+        <ProgressBar
+          steps={["Schedule", "Details", "Booked"]}
+          currentStep={step}
+          variant={stepperStyle}
+          theme={stepperTheme}
+          className="mb-8"
+          onStepClick={(stepName, index) => {
+            if (stepName === "Schedule") {
+              reset();
+            } else if (stepName === "Details" && selected) {
+              setStep("Details");
+            }
+          }}
+        />
 
         {step === "Schedule" && (
           <div>
@@ -462,7 +502,7 @@ export default function BookingFlow() {
                     : '/images/hero_pole_back.png'
                 } 
                 alt={selected.title}
-                className="w-full h-full object-cover filter grayscale contrast-110"
+                className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
               
@@ -479,7 +519,7 @@ export default function BookingFlow() {
               {/* Close Button */}
               <button 
                 onClick={reset} 
-                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/60 border border-zinc-850 flex items-center justify-center text-zinc-400 hover:text-white transition-all cursor-pointer select-none"
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/60 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition-all cursor-pointer select-none"
                 aria-label="Close details"
               >
                 ✕
@@ -499,27 +539,27 @@ export default function BookingFlow() {
 
               {/* Instructor Card Row */}
               <div className="flex items-center gap-3 bg-zinc-950 p-3 rounded-xl border border-zinc-900">
-                <div className="w-10 h-10 rounded-full bg-[#C9A961]/10 border border-[#C9A961]/20 flex items-center justify-center text-lg select-none">
+                <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-lg select-none">
                   👤
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-white uppercase font-serif tracking-wide">{selected.instructor_name}</h4>
-                  <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-mono">Certified Pole &amp; Aerial Coach</span>
+                  <span className="text-[9px] text-zinc-400 uppercase tracking-widest font-mono">Certified Pole &amp; Aerial Coach</span>
                 </div>
               </div>
 
               {/* Details List */}
-              <div className="space-y-3 text-xs font-semibold text-zinc-350 border-t border-b border-zinc-900 py-4">
+              <div className="space-y-3 text-xs font-semibold text-zinc-300 border-t border-b border-zinc-900 py-4">
                 <div className="flex items-center gap-3">
-                  <Clock size={15} className="text-[#C9A961]" />
+                  <Clock size={15} className="text-zinc-400" />
                   <span>{fmtTime(selected.starts_at)} &middot; {fmtDate(selected.starts_at)}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <MapPin size={15} className="text-[#C9A961]" />
+                  <MapPin size={15} className="text-zinc-400" />
                   <span>Evolve Studio Branch Area</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <User size={15} className="text-[#C9A961]" />
+                  <User size={15} className="text-zinc-400" />
                   <span>{selected.capacity - selected.rig_points_used} of {selected.capacity} spots left</span>
                 </div>
               </div>
@@ -530,20 +570,65 @@ export default function BookingFlow() {
                 <div className="flex items-center gap-3">
                   <button 
                     type="button"
-                    onClick={() => {}} 
+                    onClick={handleDecreaseParticipants} 
                     className="w-8 h-8 rounded-full border border-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer font-bold transition-colors select-none"
                   >
                     —
                   </button>
-                  <span className="font-mono font-bold text-white">01</span>
+                  <span className="font-mono font-bold text-white">{numParticipants.toString().padStart(2, '0')}</span>
                   <button 
                     type="button"
-                    onClick={() => {}} 
+                    onClick={handleIncreaseParticipants} 
                     className="w-8 h-8 rounded-full border border-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer font-bold transition-colors select-none"
                   >
                     +
                   </button>
                 </div>
+              </div>
+
+              {/* Participant Inputs */}
+              <div className="space-y-4 pt-4 border-t border-zinc-900">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-300 block mb-2">
+                  Participant Details
+                </span>
+                {participantDetails.map((p, idx) => {
+                  const isPrimary = idx === 0;
+                  return (
+                    <div key={idx} className="space-y-2 p-3 bg-zinc-950 border border-zinc-900 rounded-xl">
+                      <div className="text-[9px] uppercase font-bold text-[#C9A961] tracking-wider">
+                        Participant #{idx + 1} {isPrimary ? "(Primary Booker)" : ""}
+                      </div>
+                      <div className={cn("grid gap-2", isPrimary ? "grid-cols-3" : "grid-cols-2")}>
+                        <input
+                          required
+                          type="text"
+                          placeholder="Full Name"
+                          value={p.name}
+                          onChange={(e) => handleParticipantDetailChange(idx, "name", e.target.value)}
+                          className="w-full bg-zinc-900/55 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500"
+                        />
+                        <input
+                          required={isPrimary}
+                          type="email"
+                          placeholder={isPrimary ? "Email Address" : "Email (Optional)"}
+                          value={p.email}
+                          onChange={(e) => handleParticipantDetailChange(idx, "email", e.target.value)}
+                          className="w-full bg-zinc-900/55 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500"
+                        />
+                        {isPrimary && (
+                          <input
+                            required
+                            type="tel"
+                            placeholder="Phone Number"
+                            value={p.phone || ""}
+                            onChange={(e) => handleParticipantDetailChange(idx, "phone", e.target.value)}
+                            className="w-full bg-zinc-900/55 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               {actionError && (
@@ -553,29 +638,37 @@ export default function BookingFlow() {
               )}
 
               {/* Actions row */}
-              <div className="flex items-center gap-3 pt-2">
-                <button 
-                  onClick={confirmBooking} 
-                  disabled={!canConfirm || actionLoading}
-                  className="flex-1 py-3.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer"
-                  style={{
-                    background: canConfirm ? "#C9A961" : "#232323",
-                    color: canConfirm ? "#0A0A0A" : "#5A5A5A",
-                    boxShadow: canConfirm ? "0 4px 12px rgba(201, 169, 97, 0.15)" : "none"
-                  }}
-                >
-                  {actionLoading && <Loader2 size={12} className="animate-spin" />}
-                  {wouldJoinWaitlist ? "Join Waitlist" : "Book Now"}
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmBooking}
-                  disabled={!canConfirm || actionLoading}
-                  className="w-12 h-12 rounded-full border border-zinc-800 hover:border-[#C9A961] flex items-center justify-center text-zinc-450 hover:text-[#C9A961] transition-all cursor-pointer select-none"
-                  aria-label="Confirm booking next"
-                >
-                  <ChevronRight size={18} />
-                </button>
+              <div className="flex flex-col gap-2 pt-2">
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={confirmBooking} 
+                    disabled={!canConfirm || actionLoading}
+                    className="flex-1 py-3.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer"
+                    style={{
+                       background: canConfirm ? "#D1D1D6" : "#232323",
+                       color: canConfirm ? "#0A0A0A" : "#5A5A5A",
+                       boxShadow: canConfirm ? "0 4px 12px rgba(209, 209, 214, 0.15)" : "none"
+                    }}
+                  >
+                    {actionLoading && <Loader2 size={12} className="animate-spin" />}
+                    {wouldJoinWaitlist ? "Join Waitlist" : "Book Now"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmBooking}
+                    disabled={!canConfirm || actionLoading}
+                    className="w-12 h-12 rounded-full border border-zinc-800 hover:border-zinc-400 flex items-center justify-center text-zinc-400 hover:text-zinc-300 transition-all cursor-pointer select-none"
+                    aria-label="Confirm booking next"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+                {/* BUG 14 FIX: show which fields are missing when button is disabled */}
+                {!canConfirm && selected && (
+                  <p className="text-[10px] text-center" style={{ color: '#5A5A5A' }}>
+                    Fill in name, email, and phone number for participant #1 to continue.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -585,7 +678,7 @@ export default function BookingFlow() {
         {step === "Booked" && booking && (
           <div>
             <div className="flex items-center gap-2 mb-6">
-              <div className="rounded-full flex items-center justify-center bg-[#C9A961]" style={{ width: 28, height: 28 }}>
+              <div className="rounded-full flex items-center justify-center bg-[#D1D1D6]" style={{ width: 28, height: 28 }}>
                 <Check size={16} className="text-[#0A0A0A]" />
               </div>
               <h1 className="display text-4xl text-white font-bold">{booking.status === "waitlisted" ? "You're on the list" : "You're booked"}</h1>
@@ -608,7 +701,7 @@ export default function BookingFlow() {
                   <div className="text-xs mb-4" style={{ color: "#5A5A5A" }}>Member ID {profile?.member_id}</div>
                   {booking.status === "booked" && (
                     <button onClick={checkIn} disabled={actionLoading}
-                      className="px-6 py-2 rounded-sm text-sm uppercase tracking-wide flex items-center gap-2 mx-auto bg-[#C9A961] text-[#0A0A0A] font-bold cursor-pointer hover:bg-[#b09352] transition-colors"
+                      className="px-6 py-2 rounded-sm text-sm uppercase tracking-wide flex items-center gap-2 mx-auto bg-[#D1D1D6] text-[#0A0A0A] font-bold cursor-pointer hover:bg-zinc-300 transition-colors"
                       style={{ letterSpacing: "0.08em" }}>
                       {actionLoading && <Loader2 size={14} className="animate-spin" />}
                       Simulate Front Desk Check-In
@@ -628,6 +721,56 @@ export default function BookingFlow() {
             <button onClick={reset} className="text-xs text-[#8C8C8C] hover:text-white transition-colors cursor-pointer">← Back to schedule</button>
           </div>
         )}
+      </div>
+
+      {/* Floating Style Switcher for Demo Purposes */}
+      <div className="fixed bottom-6 right-6 z-50 bg-[#121212]/95 backdrop-blur-md border border-zinc-800 rounded-2xl p-4 shadow-2xl max-w-[240px] text-xs space-y-3 font-sans animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+          <span className="font-bold text-white uppercase tracking-wider text-[9px] font-mono">UX Stepper Control</span>
+          <span className="text-[8px] bg-[#FF9966]/20 text-[#FF9966] px-1.5 py-0.5 rounded font-bold uppercase font-mono">Demo</span>
+        </div>
+        <div className="space-y-2">
+          <div className="space-y-1">
+            <span className="text-[10px] text-zinc-400 block font-semibold">Visual Style:</span>
+            <div className="grid grid-cols-2 gap-1 font-mono text-[10px]">
+              {(['dots', 'capsules', 'percent', 'circle'] as const).map((style) => (
+                <button
+                  key={style}
+                  type="button"
+                  onClick={() => setStepperStyle(style)}
+                  className={cn(
+                    "px-1.5 py-1 rounded border text-center transition-all cursor-pointer font-bold capitalize",
+                    stepperStyle === style 
+                      ? "bg-[#FF9966] text-black border-[#FF9966]" 
+                      : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200"
+                  )}
+                >
+                  {style}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-1">
+            <span className="text-[10px] text-zinc-400 block font-semibold">Color Theme:</span>
+            <div className="grid grid-cols-2 gap-1 font-mono text-[10px]">
+              {(['sunset', 'teal', 'gold', 'silver'] as const).map((themeName) => (
+                <button
+                  key={themeName}
+                  type="button"
+                  onClick={() => setStepperTheme(themeName)}
+                  className={cn(
+                    "px-1.5 py-1 rounded border text-center transition-all cursor-pointer font-bold capitalize",
+                    stepperTheme === themeName 
+                      ? "bg-[#FF9966] text-black border-[#FF9966]" 
+                      : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200"
+                  )}
+                >
+                  {themeName}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

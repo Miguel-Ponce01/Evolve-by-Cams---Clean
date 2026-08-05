@@ -21,6 +21,14 @@ BEGIN
     END IF;
 END $$;
 
+-- Drop old tables to clear conflicting v1 schema definitions
+DROP TABLE IF EXISTS public.bookings CASCADE;
+DROP TABLE IF EXISTS public.credit_ledger CASCADE;
+DROP TABLE IF EXISTS public.rig_points CASCADE;
+DROP TABLE IF EXISTS public.classes CASCADE;
+DROP TABLE IF EXISTS public.class_schedules CASCADE;
+DROP TABLE IF EXISTS public.class_definitions CASCADE;
+
 -- 1. Profiles Table (Linked to Supabase Auth)
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
@@ -34,7 +42,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 
 -- 2. Family Members Table (For multi-booking capabilities)
 CREATE TABLE IF NOT EXISTS public.family_members (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     primary_user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
     full_name TEXT NOT NULL,
     relationship TEXT NOT NULL,
@@ -43,7 +51,7 @@ CREATE TABLE IF NOT EXISTS public.family_members (
 
 -- 3. Instructors Profile Registry
 CREATE TABLE IF NOT EXISTS public.instructors (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     full_name TEXT NOT NULL,
     bio TEXT,
     avatar_url TEXT,
@@ -52,7 +60,7 @@ CREATE TABLE IF NOT EXISTS public.instructors (
 
 -- 4. Classes Definition Template Table
 CREATE TABLE IF NOT EXISTS public.class_definitions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     category class_category NOT NULL,
     description TEXT,
@@ -61,7 +69,7 @@ CREATE TABLE IF NOT EXISTS public.class_definitions (
 
 -- 5. Active Live Schedules
 CREATE TABLE IF NOT EXISTS public.class_schedules (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     class_definition_id UUID REFERENCES public.class_definitions(id) ON DELETE RESTRICT NOT NULL,
     instructor_id UUID REFERENCES public.instructors(id) ON DELETE RESTRICT NOT NULL,
     start_time TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -74,14 +82,14 @@ CREATE TABLE IF NOT EXISTS public.class_schedules (
 
 -- 6. Physical Rig Points / Apparatus Mapping
 CREATE TABLE IF NOT EXISTS public.rig_points (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     station_code VARCHAR(10) UNIQUE NOT NULL, -- e.g., 'A1', 'A2', 'A3', 'A4', 'A5'
     is_operational BOOLEAN DEFAULT true NOT NULL
 );
 
 -- 7. Appended Credit Ledger (Transaction Log)
 CREATE TABLE IF NOT EXISTS public.credit_ledger (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
     amount INT NOT NULL, -- positive for purchase/refund, negative for booking debit
     description TEXT NOT NULL,
@@ -90,14 +98,14 @@ CREATE TABLE IF NOT EXISTS public.credit_ledger (
 
 -- 8. Core Bookings and Reservations Engine Table
 CREATE TABLE IF NOT EXISTS public.bookings (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES public.profiles(id) ON DELETE RESTRICT NOT NULL,
     class_schedule_id UUID REFERENCES public.class_schedules(id) ON DELETE RESTRICT NOT NULL,
     rig_point_id UUID REFERENCES public.rig_points(id) ON DELETE RESTRICT,
     family_member_id UUID REFERENCES public.family_members(id) ON DELETE RESTRICT,
     status booking_state DEFAULT 'BOOKED'::booking_state NOT NULL,
     waitlist_position INT DEFAULT NULL,
-    qr_code_token UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
+    qr_code_token UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     
     -- Business constraint protections
@@ -205,3 +213,52 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Recreate the class_availability view to match the new decoupled schema structure
+CREATE OR REPLACE VIEW public.class_availability AS
+SELECT
+  cs.id AS id,
+  cd.name AS title,
+  cd.category AS class_type,
+  cs.start_time AS starts_at,
+  cd.duration_minutes AS duration_minutes,
+  cs.max_capacity AS capacity,
+  1 AS min_to_run,
+  1 AS credits_cost,
+  'active' AS status,
+  i.full_name AS instructor_name,
+  COALESCE(SUM(CASE WHEN b.status = 'BOOKED' THEN 1 ELSE 0 END), 0) AS rig_points_used,
+  COALESCE(SUM(CASE WHEN b.status = 'WAITLISTED' THEN 1 ELSE 0 END), 0) AS waitlist_count
+FROM public.class_schedules cs
+JOIN public.class_definitions cd ON cd.id = cs.class_definition_id
+JOIN public.instructors i ON i.id = cs.instructor_id
+LEFT JOIN public.bookings b ON b.class_schedule_id = cs.id
+GROUP BY cs.id, cd.name, cd.category, cs.start_time, cd.duration_minutes, cs.max_capacity, i.full_name;
+
+-- Recreate the check_in_booking function for entrance scans
+CREATE OR REPLACE FUNCTION public.check_in_booking(p_booking_id UUID)
+RETURNS public.bookings
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_booking public.bookings%ROWTYPE;
+BEGIN
+  SELECT * INTO v_booking FROM public.bookings WHERE id = p_booking_id FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'booking not found';
+  END IF;
+
+  IF v_booking.status <> 'BOOKED'::booking_state THEN
+    RAISE EXCEPTION 'booking is not in a checkable state (%)', v_booking.status;
+  END IF;
+
+  UPDATE public.bookings
+  SET status = 'ATTENDED'::booking_state
+  WHERE id = p_booking_id
+  RETURNING * INTO v_booking;
+
+  RETURN v_booking;
+END;
+$$;
+

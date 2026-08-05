@@ -65,17 +65,26 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   const isAdminSession = request.cookies.get('evolve-admin-session')?.value === 'true'
+  const isStaffSession = request.cookies.get('evolve-staff-session')?.value === 'true'
 
-  // Protect admin, portal, roster, schedule, analytics, wallet, and profile routes from unauthenticated users
+  // Protect admin, portal, roster, schedule, analytics, wallet, profile, and dashboard routes from unauthenticated users
   const isProtectedRoute = path.startsWith('/portal') ||
                            path.startsWith('/roster') ||
                            path.startsWith('/schedule') ||
                            path.startsWith('/analytics') ||
                            path.startsWith('/wallet') ||
                            path.startsWith('/profile') ||
+                           path.startsWith('/dashboard') || // BUG 5 FIX: was missing from protection
                            (path.startsWith('/admin') && path !== '/admin')
 
-  if (isProtectedRoute && !user && !isAdminSession) {
+  // Block staff from accessing sensitive financial routes (Analytics and Wallet)
+  const isStaffRestrictedRoute = path.startsWith('/analytics') || path.startsWith('/wallet')
+
+  if (isStaffRestrictedRoute && isStaffSession) {
+    return NextResponse.redirect(new URL('/portal?error=unauthorized', request.url))
+  }
+
+  if (isProtectedRoute && !user && !isAdminSession && !isStaffSession) {
     return NextResponse.redirect(new URL('/admin', request.url))
   }
 
@@ -91,5 +100,6 @@ export const config = {
     '/analytics/:path*',
     '/wallet/:path*',
     '/profile/:path*',
+    '/dashboard/:path*', // BUG 5 FIX: added missing dashboard route
   ],
 }

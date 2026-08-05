@@ -20,22 +20,22 @@ import type { FitnessClass } from '@/types';
 
 function StatusPill({ status }: { status: string }) {
   if (status === 'attended') return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-950/20 text-emerald-400 border border-emerald-900/30">
       <CheckCircle2 size={9} /> Attended
     </span>
   );
   if (status === 'cancelled') return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-red-50 text-red-600 border border-red-200">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-red-950/20 text-red-400 border border-red-900/30">
       <XCircle size={9} /> Cancelled
     </span>
   );
   if (status === 'pending') return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-50 text-amber-700 border border-amber-200">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-950/20 text-amber-400 border border-amber-900/30">
       <Clock size={9} /> Pending Approval
     </span>
   );
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-sky-50 text-sky-600 border border-sky-200">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-sky-950/20 text-sky-400 border border-sky-900/30">
       <Clock size={9} /> Upcoming
     </span>
   );
@@ -43,12 +43,12 @@ function StatusPill({ status }: { status: string }) {
 
 function PaymentPill({ method }: { method: string }) {
   const cfg: Record<string, string> = {
-    cash:   'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
-    card:   'bg-sky-500/10 text-sky-700 border-sky-500/20',
-    credit: 'bg-violet-500/10 text-violet-700 border-violet-500/20',
+    cash:   'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    card:   'bg-sky-500/10 text-sky-400 border-sky-500/20',
+    credit: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
   };
   return (
-    <span className={cn('px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border', cfg[method] ?? 'bg-secondary text-muted-foreground border-border')}>
+    <span className={cn('px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border', cfg[method] ?? 'bg-zinc-800 text-zinc-400 border-zinc-700')}>
       {method}
     </span>
   );
@@ -216,34 +216,40 @@ export default function RosterPage() {
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-5xl">
+    <div className="min-h-screen bg-[#0A0A0A] text-[#F5F5F3] py-12 px-6 sm:px-8 font-sans selection:bg-[#C9A961] selection:text-black">
+      <div className="max-w-5xl mx-auto space-y-8">
 
       {/* ── Header ── */}
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/" className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors text-foreground">
+      <div className="flex items-center gap-4 border-b border-zinc-900 pb-6">
+        <Link 
+          href="/" 
+          className="w-10 h-10 rounded-full bg-[#1C1C1C] border border-zinc-800 flex items-center justify-center hover:bg-zinc-800 transition-colors text-white"
+        >
           <ArrowLeft size={16} />
         </Link>
         <div className="flex-1">
-          <span className="text-xs uppercase font-mono tracking-widest text-primary font-bold">POS Administration</span>
-          <h1 className="text-3xl font-heading font-black tracking-wide uppercase">Class Roster & Check-in</h1>
+          <span className="text-xs uppercase font-mono tracking-widest text-[#C9A961] font-bold">POS Administration</span>
+          <h1 className="text-3xl font-serif font-light tracking-[0.1em] text-white">
+            CLASS <span className="text-[#C9A961] font-bold">ROSTER &amp; CHECK-IN</span>
+          </h1>
         </div>
       </div>
 
       {/* ── Toast ── */}
       {toastMsg && (
         <div className={cn(
-          'mb-5 p-3 rounded-xl border text-sm font-semibold animate-slide-up',
+          'p-3.5 rounded-xl border text-xs font-semibold animate-slide-up leading-relaxed',
           toastType === 'success'
-            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700'
-            : 'bg-red-500/10 border-red-500/30 text-red-700'
+            ? 'bg-emerald-950/20 border-emerald-900/30 text-emerald-400'
+            : 'bg-red-950/20 border-red-900/30 text-red-400'
         )}>
           {toastMsg}
         </div>
       )}
 
       {/* ── Class Selector ── */}
-      <div className="bg-white border border-border rounded-2xl p-4 mb-5 shadow-sm">
-        <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground mb-2">
+      <div className="bg-[#121212] border border-zinc-900 rounded-2xl p-6 shadow-xl">
+        <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500 mb-3.5">
           Select a Class
         </label>
         <CustomSelect
@@ -256,10 +262,12 @@ export default function RosterPage() {
 
       {/* ── No class selected ── */}
       {!selectedClass && (
-        <div className="bg-white border border-border/50 rounded-3xl text-center py-20">
-          <ClipboardList size={40} className="mx-auto text-muted-foreground mb-3" />
-          <p className="font-heading font-black text-xl uppercase">No Class Selected</p>
-          <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+        <div className="bg-[#121212] border border-zinc-900 rounded-2xl text-center py-24 shadow-xl flex flex-col items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-zinc-900/50 border border-zinc-850 flex items-center justify-center mb-4">
+            <ClipboardList size={22} className="text-zinc-500" />
+          </div>
+          <p className="font-serif font-light text-lg uppercase tracking-wider text-white">No Class Selected</p>
+          <p className="text-xs text-zinc-500 mt-2.5 max-w-xs leading-relaxed">
             Pick a class from the dropdown above to view the roster, check in clients, and manage the waitlist.
           </p>
         </div>
@@ -269,49 +277,49 @@ export default function RosterPage() {
       {selectedClass && (
         <>
           {/* Class Summary Card */}
-          <div className="bg-white border border-border rounded-2xl p-5 mb-5 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="bg-[#121212] border border-zinc-900 rounded-2xl p-6 shadow-xl space-y-6">
+            <div className="flex flex-wrap items-start justify-between gap-6">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl">{selectedClass.instructor.avatar}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{selectedClass.instructor.avatar}</span>
                   <div>
-                    <h2 className="font-heading font-black text-xl uppercase leading-tight">{selectedClass.title}</h2>
-                    <p className="text-sm text-muted-foreground">{selectedClass.instructor.name} · {selectedClass.type}</p>
+                    <h2 className="font-serif font-light text-xl uppercase tracking-wider text-white">{selectedClass.title}</h2>
+                    <p className="text-xs text-zinc-500 font-medium">{selectedClass.instructor.name} · {selectedClass.type}</p>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground font-mono mt-1">
-                  📅 {formatDate(selectedClass.date)} · ⏰ {selectedClass.time} · ⏱ {selectedClass.duration}min
+                <p className="text-[10px] text-[#C9A961] font-mono mt-2 uppercase tracking-wide">
+                  📅 {formatDate(selectedClass.date)} · ⏰ {selectedClass.time} · ⏱ {selectedClass.duration} min
                 </p>
               </div>
 
               {/* KPI pills */}
-              <div className="flex flex-wrap gap-2">
-                <div className="text-center px-4 py-2 rounded-2xl bg-secondary border border-border">
-                  <p className="font-black text-lg">{attendedCount}</p>
-                  <p className="text-[9px] uppercase font-bold text-emerald-600 tracking-wide">Attended</p>
+              <div className="flex flex-wrap gap-2.5">
+                <div className="text-center px-4 py-2.5 rounded-xl bg-[#1C1C1C] border border-zinc-800">
+                  <p className="font-black text-lg text-white tabular-nums">{attendedCount}</p>
+                  <p className="text-[8px] uppercase font-bold text-emerald-400 tracking-wider mt-0.5">Attended</p>
                 </div>
-                <div className="text-center px-4 py-2 rounded-2xl bg-secondary border border-border">
-                  <p className="font-black text-lg">{upcomingCount}</p>
-                  <p className="text-[9px] uppercase font-bold text-sky-600 tracking-wide">Upcoming</p>
+                <div className="text-center px-4 py-2.5 rounded-xl bg-[#1C1C1C] border border-zinc-800">
+                  <p className="font-black text-lg text-white tabular-nums">{upcomingCount}</p>
+                  <p className="text-[8px] uppercase font-bold text-sky-400 tracking-wider mt-0.5">Upcoming</p>
                 </div>
-                <div className="text-center px-4 py-2 rounded-2xl bg-secondary border border-border">
-                  <p className="font-black text-lg">{cancelledCount}</p>
-                  <p className="text-[9px] uppercase font-bold text-red-500 tracking-wide">Cancelled</p>
+                <div className="text-center px-4 py-2.5 rounded-xl bg-[#1C1C1C] border border-zinc-800">
+                  <p className="font-black text-lg text-white tabular-nums">{cancelledCount}</p>
+                  <p className="text-[8px] uppercase font-bold text-red-400 tracking-wider mt-0.5">Cancelled</p>
                 </div>
-                <div className="text-center px-4 py-2 rounded-2xl bg-secondary border border-border">
-                  <p className="font-black text-lg">{waitlistEntries.length}</p>
-                  <p className="text-[9px] uppercase font-bold text-amber-600 tracking-wide">Waitlist</p>
+                <div className="text-center px-4 py-2.5 rounded-xl bg-[#1C1C1C] border border-zinc-800">
+                  <p className="font-black text-lg text-white tabular-nums">{waitlistEntries.length}</p>
+                  <p className="text-[8px] uppercase font-bold text-amber-400 tracking-wider mt-0.5">Waitlist</p>
                 </div>
               </div>
             </div>
 
             {/* Occupancy bar */}
-            <div className="mt-4">
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="text-muted-foreground font-semibold">Occupancy</span>
-                <span className="font-bold font-mono text-foreground">{activeBookings.length}/{selectedClass.totalSpots} ({occupancyPct}%)</span>
+            <div className="pt-2 border-t border-zinc-900/50">
+              <div className="flex items-center justify-between text-[10px] mb-2 font-mono uppercase tracking-wider">
+                <span className="text-zinc-500 font-bold">Occupancy Level</span>
+                <span className="font-bold text-white">{activeBookings.length} / {selectedClass.totalSpots} ({occupancyPct}%)</span>
               </div>
-              <div className="h-2 bg-secondary rounded-full overflow-hidden">
+              <div className="h-1.5 bg-zinc-900 rounded-full overflow-hidden">
                 <div
                   className={cn('h-full rounded-full transition-all', occupancyPct >= 90 ? 'bg-red-500' : occupancyPct >= 60 ? 'bg-amber-500' : 'bg-emerald-500')}
                   style={{ width: `${occupancyPct}%` }}
@@ -321,29 +329,29 @@ export default function RosterPage() {
           </div>
 
           {/* ── Roster Controls ── */}
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 mt-8 mb-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search client name or email..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4 py-2 text-sm bg-white border border-border rounded-xl focus:outline-none focus:border-primary text-foreground w-64"
+                className="pl-9 pr-4 py-2.5 text-xs bg-[#1C1C1C] border border-zinc-800 rounded-xl focus:outline-none focus:border-[#C9A961] text-white w-64 font-medium"
               />
             </div>
             <div className="flex items-center gap-2">
               {upcomingCount > 0 && (
                 <button
                   onClick={handleMarkAllAttended}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider rounded-pill hover:bg-emerald-600 active:scale-[0.98] transition-all cursor-pointer shadow-sm"
+                  className="flex items-center gap-1.5 px-4.5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-black text-[10px] font-black uppercase tracking-wider rounded-full active:scale-[0.98] transition-all cursor-pointer shadow-lg"
                 >
                   <UserCheck size={13} /> Mark All Attended
                 </button>
               )}
               <button
                 onClick={handlePrintRoster}
-                className="flex items-center gap-1.5 px-4 py-2 bg-secondary border border-border text-foreground text-xs font-bold uppercase tracking-wider rounded-pill hover:bg-primary/10 hover:text-primary transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-4.5 py-2.5 bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800 text-[10px] font-black uppercase tracking-wider rounded-full transition-all cursor-pointer"
               >
                 <Printer size={13} /> Print Roster
               </button>
@@ -360,17 +368,19 @@ export default function RosterPage() {
               </p>
             </div>
 
-            <div className="bg-white border border-border rounded-3xl overflow-hidden shadow-sm mb-5 overflow-x-auto">
+            <div className="bg-[#121212] border border-zinc-900 rounded-2xl overflow-hidden mb-6 overflow-x-auto shadow-xl">
               {rosterBookings.length === 0 ? (
-                <div className="text-center py-14">
-                  <Users size={36} className="mx-auto text-muted-foreground mb-3" />
-                  <p className="font-heading font-black text-lg uppercase">No Bookings Yet</p>
-                  <p className="text-sm text-muted-foreground mt-1">No clients have booked this class.</p>
+                <div className="text-center py-16 flex flex-col items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-zinc-900/50 border border-zinc-850 flex items-center justify-center mb-3">
+                    <Users size={18} className="text-zinc-500" />
+                  </div>
+                  <p className="font-serif font-light text-base uppercase tracking-wider text-white">No Bookings Yet</p>
+                  <p className="text-xs text-zinc-500 mt-1.5">No clients have booked this class.</p>
                 </div>
               ) : (
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-secondary/40 border-b border-border font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+                    <tr className="bg-zinc-950/40 border-b border-zinc-900 font-mono text-[9px] uppercase tracking-widest text-zinc-500">
                       <th className="p-3 pl-5">Spot</th>
                       <th className="p-3">Client</th>
                       <th className="p-3">Contact</th>
@@ -380,29 +390,29 @@ export default function RosterPage() {
                       <th className="p-3 text-center print:hidden">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/50">
+                  <tbody className="divide-y divide-zinc-900/50">
                     {rosterBookings.map(b => (
                       <tr
                         key={b.id}
                         className={cn(
                           'transition-colors',
-                          b.status === 'attended'  ? 'bg-emerald-500/3 hover:bg-emerald-500/5' :
-                          b.status === 'cancelled' ? 'opacity-50' :
-                          'hover:bg-secondary/20'
+                          b.status === 'attended'  ? 'bg-emerald-950/5 hover:bg-emerald-950/10' :
+                          b.status === 'cancelled' ? 'opacity-40' :
+                          'hover:bg-zinc-900/40'
                         )}
                       >
                         {/* Spot */}
                         <td className="p-3 pl-5">
-                          <span className="w-7 h-7 rounded-full bg-primary/10 text-primary font-black text-xs flex items-center justify-center">
+                          <span className="w-7 h-7 rounded-full bg-[#C9A961]/10 text-[#C9A961] font-black text-xs flex items-center justify-center">
                             {b.spotNumber}
                           </span>
                         </td>
 
                         {/* Client */}
                         <td className="p-3">
-                          <p className="font-bold text-foreground">{b.customerName}</p>
+                          <p className="font-bold text-white">{b.customerName}</p>
                           {b.discountCode && (
-                            <span className="text-[9px] font-mono text-violet-600 bg-violet-500/10 px-1.5 py-0.5 rounded">
+                            <span className="text-[9px] font-mono text-violet-400 bg-violet-950/20 px-1.5 py-0.5 rounded">
                               Promo: {b.discountCode}
                             </span>
                           )}
@@ -410,9 +420,9 @@ export default function RosterPage() {
 
                         {/* Contact */}
                         <td className="p-3">
-                          <p className="text-muted-foreground">{b.customerEmail}</p>
+                          <p className="text-zinc-500 font-medium">{b.customerEmail}</p>
                           {b.customerPhone && (
-                            <p className="text-muted-foreground font-mono text-[10px]">{b.customerPhone}</p>
+                            <p className="text-zinc-600 font-mono text-[10px] mt-0.5">{b.customerPhone}</p>
                           )}
                         </td>
 
@@ -422,9 +432,9 @@ export default function RosterPage() {
                         </td>
 
                         {/* Amount */}
-                        <td className="p-3 text-center font-mono font-bold text-foreground">
+                        <td className="p-3 text-center font-mono font-bold text-white">
                           {b.paymentMethod === 'credit' ? (
-                            <span className="text-violet-600">1 credit</span>
+                            <span className="text-violet-400">1 credit</span>
                           ) : (
                             `₱${b.amountPaid}`
                           )}
@@ -475,15 +485,15 @@ export default function RosterPage() {
 
             {/* ── Waitlist Section ── */}
             {waitlistEntries.length > 0 && (
-              <div className="bg-white border border-amber-200 rounded-3xl overflow-hidden shadow-sm">
-                <div className="px-5 py-3 bg-amber-50 border-b border-amber-200">
-                  <h3 className="font-heading font-black text-sm uppercase tracking-wider text-amber-700 flex items-center gap-1.5">
-                    <AlertTriangle size={14} /> Waitlist ({waitlistEntries.length})
+              <div className="bg-[#121212] border border-amber-900/20 rounded-2xl overflow-hidden shadow-xl mb-6">
+                <div className="px-5 py-3.5 bg-amber-950/10 border-b border-amber-900/20">
+                  <h3 className="font-serif font-light text-sm uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                    <AlertTriangle size={14} className="text-amber-500" /> Waitlist Queue ({waitlistEntries.length})
                   </h3>
                 </div>
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-amber-50/60 border-b border-amber-100 font-mono text-[9px] uppercase tracking-widest text-amber-600">
+                    <tr className="bg-amber-950/5 border-b border-amber-900/10 font-mono text-[9px] uppercase tracking-widest text-amber-500/80">
                       <th className="p-3 pl-5">#</th>
                       <th className="p-3">Client</th>
                       <th className="p-3">Contact</th>
@@ -491,24 +501,24 @@ export default function RosterPage() {
                       <th className="p-3 text-center print:hidden">Promote</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-amber-100/60">
+                  <tbody className="divide-y divide-amber-900/10">
                     {waitlistEntries.map((w, idx) => (
-                      <tr key={`${w.classId}-${w.customerEmail}`} className="hover:bg-amber-50/40 transition-colors">
+                      <tr key={`${w.classId}-${w.customerEmail}`} className="hover:bg-amber-950/5 transition-colors">
                         <td className="p-3 pl-5">
-                          <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 font-black text-xs flex items-center justify-center">
+                          <span className="w-6 h-6 rounded-full bg-amber-950/30 text-amber-400 font-black text-xs flex items-center justify-center border border-amber-900/20">
                             {idx + 1}
                           </span>
                         </td>
-                        <td className="p-3 font-bold text-foreground">{w.customerName}</td>
-                        <td className="p-3 text-muted-foreground">
-                          <p>{w.customerEmail}</p>
-                          {w.customerPhone && <p className="font-mono text-[10px]">{w.customerPhone}</p>}
+                        <td className="p-3 font-bold text-white">{w.customerName}</td>
+                        <td className="p-3 text-zinc-500">
+                          <p className="font-medium">{w.customerEmail}</p>
+                          {w.customerPhone && <p className="font-mono text-[10px] mt-0.5">{w.customerPhone}</p>}
                         </td>
                         <td className="p-3 text-center">
                           {w.holdCredit ? (
-                            <span className="text-violet-600 text-[10px] font-bold">1 credit held</span>
+                            <span className="text-violet-400 text-[10px] font-bold">1 credit held</span>
                           ) : (
-                            <span className="text-muted-foreground text-[10px]">—</span>
+                            <span className="text-zinc-600 text-[10px]">—</span>
                           )}
                         </td>
                         <td className="p-3 text-center print:hidden">
@@ -516,10 +526,10 @@ export default function RosterPage() {
                             onClick={() => handlePromote(w.customerEmail, w.customerName)}
                             disabled={promotingEmail === w.customerEmail || activeBookings.length >= selectedClass.totalSpots}
                             className={cn(
-                              'flex items-center gap-1 px-3 py-1.5 text-[10px] font-bold uppercase rounded-pill transition-all cursor-pointer mx-auto whitespace-nowrap',
+                              'flex items-center gap-1 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-full transition-all cursor-pointer mx-auto whitespace-nowrap border',
                               activeBookings.length >= selectedClass.totalSpots
-                                ? 'bg-secondary text-muted-foreground cursor-not-allowed'
-                                : 'bg-primary text-white hover:bg-primary/90 active:scale-[0.98] shadow-sm'
+                                ? 'bg-zinc-900 border-zinc-850 text-zinc-600 cursor-not-allowed'
+                                : 'bg-[#C9A961] border-[#C9A961] text-black hover:bg-[#b09352] active:scale-[0.98] shadow-md'
                             )}
                             title={activeBookings.length >= selectedClass.totalSpots ? 'Class is full' : 'Promote to booked'}
                           >
@@ -535,6 +545,7 @@ export default function RosterPage() {
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }

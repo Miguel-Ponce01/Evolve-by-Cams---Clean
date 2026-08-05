@@ -4,14 +4,23 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LogOut, ChevronDown } from 'lucide-react';
+import { LogOut, ChevronDown, X, Menu } from 'lucide-react';
 
 export function Navbar() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [isSubdomain, setIsSubdomain] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // BUG 12 FIX: staff session doesn't change on navigation, run once on mount only
+      setIsStaff(document.cookie.includes('evolve-staff-session=true') || localStorage.getItem('evolve-staff-session') === 'true');
+    }
+  }, []); // intentionally empty — staff session is set once per login, not per route
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -52,16 +61,19 @@ export function Navbar() {
   // Define nav links based on layout mode
   const getNavItems = () => {
     if (isAdmin) {
-      return [
+      const baseItems = [
         { name: 'Console', path: '/portal' },
         { name: 'Roster', path: '/roster' },
         { name: 'Schedule', path: '/schedule' },
-        { name: 'Analytics', path: '/analytics' },
         { name: 'Coaches', path: '/instructors' },
-        { name: 'Wallet', path: '/wallet' },
         { name: 'Profile', path: '/profile' },
         { name: 'Dashboard', path: '/dashboard' },
       ];
+      if (!isStaff) {
+        baseItems.splice(3, 0, { name: 'Analytics', path: '/analytics' });
+        baseItems.splice(5, 0, { name: 'Wallet', path: '/wallet' });
+      }
+      return baseItems;
     }
     if (isClient) {
       return [
@@ -73,7 +85,7 @@ export function Navbar() {
       { name: 'Home', path: '/' },
       { name: 'Classes', path: '/classes' },
       { name: 'Packages', path: '/memberships' },
-      { name: 'Events', path: '/events' },
+      { name: 'Book Calendar', path: '/events' },
       { name: 'Location', path: '/location' },
       { name: 'About', path: '/about' },
       { name: 'More', path: '/faq' },
@@ -81,6 +93,35 @@ export function Navbar() {
   };
 
   const navItems = getNavItems();
+
+  const getMobileBottomNavItems = () => {
+    if (isAdmin) {
+      const items = [
+        { name: 'Console', path: '/portal' },
+        { name: 'Roster', path: '/roster' },
+        { name: 'Schedule', path: '/schedule' },
+      ];
+      if (isStaff) {
+        items.push({ name: 'Coaches', path: '/instructors' });
+      } else {
+        items.push({ name: 'Analytics', path: '/analytics' });
+      }
+      return items;
+    }
+    if (isClient) {
+      return [
+        { name: 'Memberships', path: '/memberships' },
+      ];
+    }
+    return [
+      { name: 'Home', path: '/' },
+      { name: 'Classes', path: '/classes' },
+      { name: 'Book Calendar', path: '/events' },
+      { name: 'Packages', path: '/memberships' },
+    ];
+  };
+
+  const mobileNavItems = getMobileBottomNavItems();
 
   // Gold accent color used consistently across all themes
   const GOLD = '#C9A961';
@@ -96,7 +137,7 @@ export function Navbar() {
             : 'bg-[#0A0A0A] border-zinc-900 py-3 text-white'
         )}
       >
-        <div className="container mx-auto px-6 h-20 flex items-center justify-between max-w-[1240px]">
+        <div className="w-full mx-auto px-6 xl:px-10 h-20 flex items-center justify-between max-w-[1400px]">
 
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-1.5 select-none cursor-pointer group">
@@ -121,8 +162,8 @@ export function Navbar() {
           </Link>
 
           {/* Navigation Links and CTA */}
-          <div className="flex items-center gap-8 h-full">
-            <nav className="flex items-center space-x-8 h-full">
+          <div className="flex items-center gap-4 xl:gap-8 h-full">
+            <nav className="flex items-center space-x-4 xl:space-x-8 h-full">
               {navItems.map(item => {
                 const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path));
                 return (
@@ -130,7 +171,7 @@ export function Navbar() {
                     key={item.path + item.name}
                     href={item.path}
                     className={cn(
-                      'relative text-[11px] font-black uppercase tracking-widest transition-colors duration-200 cursor-pointer py-1',
+                      'relative text-[10px] xl:text-[11px] font-black uppercase tracking-wider xl:tracking-widest transition-colors duration-200 cursor-pointer py-1',
                       'after:absolute after:bottom-0 after:left-0 after:h-[2px] after:rounded-full after:transition-all after:duration-300',
                       isActive
                         ? `text-[#C9A961] after:w-full after:bg-[#C9A961]`
@@ -155,29 +196,22 @@ export function Navbar() {
             ) : isClient ? (
               <Link
                 href="/book"
-                className="py-2.5 px-6 rounded-full bg-[#C9A961] hover:bg-[#b09352] text-black font-black text-xs uppercase tracking-widest transition-transform duration-200 active:scale-[0.96] shadow-md shadow-[#C9A961]/10"
+                className="py-2.5 px-4 xl:px-6 rounded-full bg-[#C9A961] hover:bg-[#b09352] text-black font-black text-xs uppercase tracking-widest transition-transform duration-200 active:scale-[0.96] shadow-md shadow-[#C9A961]/10"
               >
                 Book Session
               </Link>
             ) : (
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/book"
-                  className="py-2.5 px-6 rounded-full bg-[#C9A961] hover:bg-[#b09352] text-black font-black text-xs uppercase tracking-widest transition-transform duration-200 active:scale-[0.96] shadow-md shadow-[#C9A961]/20"
-                >
-                  Book a Class
-                </Link>
-
+              <div className="flex items-center gap-2.5 xl:gap-3">
                 {/* Log In button */}
-                <Link
-                  href="/login"
-                  className="py-2.5 px-5 rounded-full border border-zinc-700 hover:border-[#C9A961] text-zinc-300 hover:text-[#C9A961] font-black text-xs uppercase tracking-widest transition-transform duration-200 active:scale-[0.96] flex items-center gap-1.5"
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('open-login-modal'))}
+                  className="py-2.5 px-3 xl:px-5 rounded-full border border-zinc-700 hover:border-[#C9A961] text-zinc-300 hover:text-[#C9A961] font-black text-xs uppercase tracking-widest transition-transform duration-200 active:scale-[0.96] flex items-center gap-1.5 cursor-pointer"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                   </svg>
                   Log In
-                </Link>
+                </button>
                 {isSubdomain && (
                   <div className="relative" ref={menuRef}>
                     <button
@@ -282,7 +316,7 @@ export function Navbar() {
           </Link>
         ) : (
           <Link
-            href="/book"
+            href="/events#book-class"
             className="py-1.5 px-4 rounded-full bg-[#C9A961] hover:bg-[#b09352] text-black font-black text-[10px] uppercase tracking-wider transition-colors active:scale-95"
           >
             Book
@@ -297,7 +331,7 @@ export function Navbar() {
           'bg-[#0A0A0A] border-zinc-800 text-zinc-500'
         )}
       >
-        {navItems.map(item => {
+        {mobileNavItems.map(item => {
           const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path));
           return (
             <Link
@@ -315,7 +349,65 @@ export function Navbar() {
             </Link>
           );
         })}
+        
+        {/* Mobile "More" Drawer Toggle */}
+        {!isAdmin && !isClient && (
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 cursor-pointer text-zinc-550 hover:text-zinc-300"
+          >
+            <span className="text-[9px] font-black uppercase tracking-widest leading-none">More</span>
+          </button>
+        )}
       </nav>
+
+      {/* ── MOBILE MORE DRAWER ── */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="absolute right-0 top-0 bottom-0 w-64 bg-[#111111] border-l border-zinc-800 p-6 flex flex-col justify-between animate-in slide-in-from-right duration-250">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-light tracking-[0.2em] font-serif text-white uppercase">Menu</span>
+                <button 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 cursor-pointer"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              <nav className="flex flex-col gap-4">
+                {[
+                  { name: 'Location', path: '/location' },
+                  { name: 'About', path: '/about' },
+                  { name: 'More / FAQ', path: '/faq' },
+                ].map(item => (
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-sm font-bold uppercase tracking-wider text-zinc-350 hover:text-white"
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  window.dispatchEvent(new CustomEvent('open-login-modal'));
+                }}
+                className="w-full py-2.5 rounded-full border border-zinc-700 hover:border-[#C9A961] text-zinc-300 hover:text-[#C9A961] font-black text-xs uppercase tracking-widest text-center cursor-pointer transition-colors"
+              >
+                Log In
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

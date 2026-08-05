@@ -13,8 +13,8 @@ export default function LocationPage() {
       name: "Davao North Branch",
       address: "3F Sunscor Bldg., corner Arroyo St., along R Castillo highway, Davao City, 8000",
       mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3959.0433284589255!2d125.622345!3d7.098432!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x32f96e456789abcd%3A0xfedcba9876543210!2sR.%20Castillo%20St%2C%20Davao%20City!5e0!3m2!1sen!2sph!4v1700000000001!5m2!1sen!2sph",
-      phone: "+63 987 654 3210",
-      email: "evolvedavao@evolve.studio",
+      phone: "+63 915 183 3369",
+      email: "tweetiebullecer@gmail.com",
       directions: "Located along R. Castillo Highway. Landmarks: Sunscor building corner Arroyo street. Dedicated client parking is available directly in front of the building.",
     }
   };

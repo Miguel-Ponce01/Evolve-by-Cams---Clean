@@ -3,6 +3,7 @@ import "./globals.css";
 import { BookingProvider } from "@/context/BookingContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ThemeLayoutWrapper } from "@/components/layout/ThemeLayoutWrapper";
+import { AIAssistant } from "@/components/layout/AIAssistant";
 
 export const metadata: Metadata = {
   title: "Evolve by Cams — Fitness & Wellness",
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <BookingProvider>
             <ThemeLayoutWrapper>
               {children}
+              <AIAssistant />
             </ThemeLayoutWrapper>
           </BookingProvider>
         </ThemeProvider>

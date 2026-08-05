@@ -345,15 +345,15 @@ export default function HomePage() {
             {testimonials.slice(0, 3).map((t, idx) => (
               <div key={idx} className={`p-8 rounded-xl border flex flex-col justify-between ${themeCardBg}`}>
                 <p className={`text-sm italic leading-relaxed ${themeTextMuted}`}>
-                  &ldquo;{t.text}&rdquo;
+                  &ldquo;{t.quote}&rdquo;
                 </p>
                 <div className="mt-6 flex items-center justify-between border-t border-zinc-800/10 pt-4">
                   <div>
                     <h4 className={`text-sm font-bold uppercase tracking-wide font-serif ${themeHeaderColor}`}>{t.name}</h4>
-                    <span className="text-[10px] text-zinc-500 block uppercase font-mono">{t.role}</span>
+                    <span className="text-[10px] text-zinc-500 block uppercase font-mono">{t.discipline}</span>
                   </div>
                   <div className="flex gap-0.5 text-[#C9A961]">
-                    {[...Array(t.rating)].map((_, i) => (
+                    {[...Array(5)].map((_, i) => (
                       <span key={i} className="text-sm">&#9733;</span>
                     ))}
                   </div>

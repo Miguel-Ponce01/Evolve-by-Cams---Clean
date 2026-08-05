@@ -55,48 +55,145 @@
 :root {
   --background: #ffffff;
   --foreground: #121212;
-  --card: #ffffff;
+  --card: #f4f4f7;
   --card-foreground: #121212;
   --popover: #ffffff;
   --popover-foreground: #121212;
-  --primary: #C9A961; /* Evolve Gold */
+  --primary: #121212; /* Solid Matte Black in Light Mode */
   --primary-foreground: #ffffff;
-  --secondary: #1E1E1E; /* Charcoal */
+  --secondary: #e5e5ea; /* Silver / Light Gray */
   --secondary-foreground: #121212;
-  --muted: #f3f4f6;
-  --muted-foreground: #4b5563;
-  --accent: #b09352; /* Muted Gold */
+  --muted: #f2f2f7;
+  --muted-foreground: #8e8e93;
+  --accent: #8e8e93;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
-  --border: #e5e7eb;
+  --border: #d1d1d6;
   --input: #ffffff;
-  --ring: #C9A961;
+  --ring: #8e8e93;
   --radius: 12px;
   --bg-image: none;
+
+  /* Tokenized Surface Contrast Variables */
+  --bg-app: #f4f4f7;
+  
+  /* Dark Surface Tokens (For Client/Booking views) */
+  --surface-dark: #121212;
+  --text-on-dark-high: #f2f2f5;
+  --text-on-dark-med: #aeaeb2;
+  --text-on-dark-low: #636366;
+
+  /* Light Surface Tokens (For Admin/POS white cards) */
+  --surface-light: #ffffff;
+  --text-on-light-high: #121212;
+  --text-on-light-med: #55555a;
+  --text-on-light-low: #8e8e93;
 }
 
+/* Dark Mode Overrides */
+.dark, .dark-mode-override {
+  --background: #121212;
+  --foreground: #f2f2f5;
+  --card: #1c1c1e;
+  --card-foreground: #f2f2f5;
+  --popover: #1c1c1e;
+  --popover-foreground: #f2f2f5;
+  --primary: #e5e5ea; /* Silver/Light Gray in Dark Mode */
+  --primary-foreground: #121212;
+  --secondary: #2c2c2e; /* Darker Gray */
+  --secondary-foreground: #f2f2f5;
+  --muted: #1c1c1e;
+  --muted-foreground: #aeaeb2;
+  --accent: #aeaeb2;
+  --accent-foreground: #121212;
+  --border: #2c2c2e;
+  --input: #1c1c1e;
+  --ring: #aeaeb2;
+  --bg-app: #121212;
+}
 
-/* --- THEME DEFINITIONS --- */
+/* --- LEGACY THEME DEFINITIONS --- */
 .theme-aesthetic, .theme-neutral, .theme-pastel, .theme-minimalist {
   --background: #ffffff;
   --foreground: #121212;
-  --card: #ffffff;
+  --card: #f4f4f7;
   --card-foreground: #121212;
   --popover: #ffffff;
   --popover-foreground: #121212;
-  --primary: #C9A961;
+  --primary: #121212;
   --primary-foreground: #ffffff;
-  --secondary: #1E1E1E;
+  --secondary: #e5e5ea;
   --secondary-foreground: #121212;
-  --muted: #f3f4f6;
-  --muted-foreground: #4b5563;
-  --accent: #b09352;
+  --muted: #f2f2f7;
+  --muted-foreground: #8e8e93;
+  --accent: #8e8e93;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
-  --border: #e5e7eb;
+  --border: #d1d1d6;
   --radius: 12px;
   --bg-image: none;
 }
+
+/* ─── EVOLVE ADMIN THEME VARIANTS ─────────────────────────────────────────── */
+
+/* Font scale variable — set by the settings page JS */
+:root {
+  --evolve-font-scale: 100%;
+}
+
+html {
+  font-size: var(--evolve-font-scale, 100%);
+}
+
+/* Default admin dark theme (no extra class needed — baseline) */
+.evolve-theme-dark {
+  --admin-bg:        #0A0A0A;
+  --admin-sidebar:   #111111;
+  --admin-card:      #121212;
+  --admin-border:    #27272a;
+  --admin-text:      #F5F5F3;
+  --admin-muted:     #71717a;
+}
+
+/* Aesthetic Light — warm white with gold accent */
+.evolve-theme-light {
+  --admin-bg:        #f8f7f4;
+  --admin-sidebar:   #ffffff;
+  --admin-card:      #ffffff;
+  --admin-border:    #e4e4e7;
+  --admin-text:      #18181b;
+  --admin-muted:     #71717a;
+}
+
+/* Minimalist Gray — cool zinc slate */
+.evolve-theme-minimalist {
+  --admin-bg:        #18181b;
+  --admin-sidebar:   #1f1f23;
+  --admin-card:      #232328;
+  --admin-border:    #3f3f46;
+  --admin-text:      #e4e4e7;
+  --admin-muted:     #a1a1aa;
+}
+
+/* Apply theme vars to admin portal pages */
+.evolve-theme-light  .admin-layout-root,
+.evolve-theme-light  aside {
+  background-color: var(--admin-sidebar) !important;
+  color: var(--admin-text) !important;
+  border-color: var(--admin-border) !important;
+}
+
+.evolve-theme-light  .admin-layout-root {
+  background-color: var(--admin-bg) !important;
+}
+
+.evolve-theme-minimalist aside,
+.evolve-theme-minimalist .admin-layout-root {
+  background-color: var(--admin-bg) !important;
+  color: var(--admin-text) !important;
+  border-color: var(--admin-border) !important;
+}
+
 
 
 @layer base {
@@ -125,6 +222,21 @@
   input, textarea, [contenteditable="true"] {
     -webkit-user-select: text;
     user-select: text;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+  select,
+  textarea {
+    background-color: var(--secondary);
+    color: var(--foreground);
+    border-color: var(--border);
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"])::placeholder,
+  textarea::placeholder {
+    color: var(--muted-foreground);
+    opacity: 0.85;
   }
 }
 
@@ -260,21 +372,6 @@
   animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Global Form Inputs Contrast & Legibility Overrides */
-input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
-select,
-textarea {
-  background-color: var(--secondary) !important;
-  color: var(--foreground) !important;
-  border-color: var(--border) !important;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-}
-
-input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"])::placeholder,
-textarea::placeholder {
-  color: var(--muted-foreground) !important;
-  opacity: 0.85 !important;
-}
 
 /* Dynamic theme overrides to implement light/dark gold/charcoal theme */
 .theme-aesthetic:not(.dark-mode-override),
@@ -285,22 +382,22 @@ textarea::placeholder {
 .dark-mode-override {
   --background: #ffffff;
   --foreground: #121212;
-  --card: #ffffff;
+  --card: #f4f4f7;
   --card-foreground: #121212;
   --popover: #ffffff;
   --popover-foreground: #121212;
-  --primary: #C9A961; /* Evolve Gold */
+  --primary: #121212; /* Solid Matte Black */
   --primary-foreground: #ffffff;
-  --secondary: #1E1E1E; /* Charcoal */
+  --secondary: #e5e5ea; /* Silver */
   --secondary-foreground: #121212;
-  --muted: #f3f4f6;
-  --muted-foreground: #4b5563;
-  --accent: #b09352; /* Muted Gold */
+  --muted: #f2f2f7;
+  --muted-foreground: #8e8e93;
+  --accent: #8e8e93;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
-  --border: #e5e7eb;
+  --border: #d1d1d6;
   --input: #ffffff;
-  --ring: #C9A961;
+  --ring: #8e8e93;
   --bg-image: none;
 }
 
@@ -351,22 +448,121 @@ input:-webkit-autofill:active {
   transition: background-color 5000s ease-in-out 0s;
 }
 
-input {
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
-}
-
-/* Specific text inputs dark color overrides */
-input[type="email"], input[type="password"], input[type="text"] {
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
-}
-
 /* Ensure placeholder text is sufficiently bright and visible */
 input::placeholder {
   color: #a1a1aa !important; /* zinc-400 equivalent */
   opacity: 1 !important;
 }
+
+/* Light Surface / White Container Contrast Overrides */
+.surface-white {
+  background-color: var(--surface-light) !important;
+  color: var(--text-on-light-high) !important;
+}
+
+.surface-white text,
+.surface-white p,
+.surface-white span,
+.surface-white h1,
+.surface-white h2,
+.surface-white h3,
+.surface-white label {
+  color: var(--text-on-light-high) !important;
+}
+
+.surface-white .text-muted-foreground,
+.surface-white .text-zinc-500,
+.surface-white .text-zinc-400 {
+  color: var(--text-on-light-med) !important;
+}
+
+/* Fix text input colors inside white cards */
+.surface-white input,
+.surface-white select,
+.surface-white textarea {
+  color: var(--text-on-light-high) !important;
+  -webkit-text-fill-color: var(--text-on-light-high) !important;
+  background-color: #f4f4f5 !important; /* light gray input */
+  border-color: #e4e4e7 !important;
+}
+
+.surface-white input::placeholder,
+.surface-white textarea::placeholder {
+  color: var(--text-on-light-low) !important;
+}
+
+/* Accessibility: General Font Scale & Visibility Ramp */
+@layer base {
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-size: 1.05rem;
+    font-weight: 500; /* slightly bolder base text for enhanced contrast */
+  }
+}
+
+/* Accessibility: Scaling up small-text utilities for reading ease */
+.text-\[7px\], .text-\[8px\], .text-\[9px\] {
+  font-size: 0.825rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.025em !important;
+}
+
+.text-\[10px\], .text-\[11px\], .text-xs {
+  font-size: 0.875rem !important; /* scaled up from 0.75rem */
+  font-weight: 600 !important;   /* extra bolding for tiny text */
+  letter-spacing: 0.015em !important;
+}
+
+.text-sm {
+  font-size: 1rem !important; /* scaled up from 0.875rem */
+  font-weight: 500 !important;
+}
+
+.text-base {
+  font-size: 1.15rem !important; /* scaled up from 1rem */
+}
+
+.text-lg {
+  font-size: 1.3rem !important; /* scaled up from 1.125rem */
+}
+
+.text-xl {
+  font-size: 1.45rem !important; /* scaled up from 1.25rem */
+}
+
+.text-2xl {
+  font-size: 1.85rem !important; /* scaled up from 1.5rem */
+}
+
+/* Adjust general body typography presets */
+.font-body-lg {
+  font-size: 20px !important;
+  font-weight: 500 !important;
+}
+
+.font-body-md {
+  font-size: 18px !important;
+  font-weight: 500 !important;
+}
+
+.font-body-strong {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+}
+
+/* Rule 1: Input Autofill Guard */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0px 1000px #121212 inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+
 
 
 

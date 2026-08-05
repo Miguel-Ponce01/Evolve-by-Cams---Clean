@@ -11,8 +11,11 @@ import { Footer } from '@/components/layout/Footer';
 export default function LoginPage() {
   const supabase = createClient();
 
+
+
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'forgot' | 'sent' | 'reset'>('login');
   const [loginMethod, setLoginMethod] = useState<'magic_link' | 'sms_otp' | 'password'>('magic_link');
+  const [studentType, setStudentType] = useState<'new' | 'existing' | 'session'>('new');
   
   // Form values
   const [name, setName] = useState('');
@@ -113,9 +116,10 @@ export default function LoginPage() {
     if (error) {
       setErrorMsg(error.message);
     } else {
-      setSuccessMsg('Successfully authenticated! Redirecting to dashboard...');
+      setSuccessMsg('Successfully authenticated! Redirecting...');
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        const params = new URLSearchParams(window.location.search);
+        window.location.href = params.get('redirectTo') || '/dashboard';
       }, 1000);
     }
   };
@@ -135,10 +139,11 @@ export default function LoginPage() {
           full_name: 'Test Student'
         }
       }));
-      setSuccessMsg('Successfully authenticated! Redirecting to dashboard...');
+      setSuccessMsg('Successfully authenticated! Redirecting...');
       setLoading(false);
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        const params = new URLSearchParams(window.location.search);
+        window.location.href = params.get('redirectTo') || '/dashboard';
       }, 1000);
       return;
     }
@@ -152,9 +157,10 @@ export default function LoginPage() {
     if (error) {
       setErrorMsg(error.message);
     } else {
-      setSuccessMsg('Successfully authenticated! Redirecting to dashboard...');
+      setSuccessMsg('Successfully authenticated! Redirecting...');
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        const params = new URLSearchParams(window.location.search);
+        window.location.href = params.get('redirectTo') || '/dashboard';
       }, 1000);
     }
   };
@@ -185,7 +191,6 @@ export default function LoginPage() {
       setErrorMsg(error.message);
     } else {
       setSuccessMsg('Registration successful! Please check your email to verify your account.');
-      // Keep name & clear password
       setPassword('');
     }
   };
@@ -264,16 +269,15 @@ export default function LoginPage() {
         <div className="w-full max-w-[460px] bg-zinc-950/85 border border-zinc-900 rounded-3xl p-8 sm:p-10 shadow-2xl relative">
           
           {/* Form Header */}
-          <div className="space-y-2 text-center mb-8">
-            <h1 className="text-3xl font-serif tracking-[0.15em] text-white uppercase">
-              {authMode === 'login' && <>STUDENT <span className="text-[#C9A961]">LOGIN</span></>}
-              {authMode === 'signup' && <>CREATE <span className="text-[#C9A961]">ACCOUNT</span></>}
-              {authMode === 'forgot' && <>FORGOT <span className="text-[#C9A961]">PASSWORD?</span></>}
-              {authMode === 'sent' && <>LINK <span className="text-[#C9A961]">SENT</span></>}
-              {authMode === 'reset' && <>RESET <span className="text-[#C9A961]">PASSWORD</span></>}
+          <div className="space-y-3 text-center mb-8">
+            <h2 className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#C9A961]">
+              Welcome to the Tribe
+            </h2>
+            <h1 className="text-2xl font-serif tracking-[0.08em] text-white leading-tight uppercase">
+              EVOLVE POLE FITNESS &amp; AERIAL ARTS STUDIO
             </h1>
-            <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">
-              Evolve Pole Fitness &amp; Aerial Arts Tribe
+            <p className="text-[10px] text-zinc-500 font-medium leading-relaxed max-w-[320px] mx-auto">
+              Please authenticate to access your scheduled classes, credit balance ledger, and active bookings.
             </p>
           </div>
 
@@ -285,32 +289,41 @@ export default function LoginPage() {
           )}
 
           {successMsg && (
-            <div className="mb-6 p-4 rounded-xl bg-emerald-950/30 border border-emerald-900/50 flex items-start gap-3 text-emerald-200 text-xs">
-              <CheckCircle size={16} className="text-emerald-400 mt-0.5 shrink-0" />
-              <span>{successMsg}</span>
+            <div className="mb-6 p-4 rounded-xl bg-emerald-950/30 border border-emerald-900/50 flex flex-col gap-3 text-emerald-200 text-xs text-left">
+              <div className="flex items-start gap-3">
+                <CheckCircle size={16} className="text-emerald-400 mt-0.5 shrink-0" />
+                <span>{successMsg}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <Link href="/" className="py-2 text-center bg-zinc-900 border border-zinc-800 text-white rounded-lg font-black uppercase text-[8px] tracking-wider hover:bg-zinc-800 transition-all cursor-pointer">
+                  Go to Home
+                </Link>
+                <Link href="/book" className="py-2 text-center bg-[#C9A961] text-black rounded-lg font-black uppercase text-[8px] tracking-wider hover:bg-[#b09352] transition-all cursor-pointer">
+                  Go to Classes
+                </Link>
+                <Link href="/memberships" className="py-2 text-center bg-zinc-900 border border-zinc-800 text-white rounded-lg font-black uppercase text-[8px] tracking-wider hover:bg-zinc-800 transition-all cursor-pointer">
+                  Packages
+                </Link>
+                <Link href="/events" className="py-2 text-center bg-zinc-900 border border-zinc-800 text-white rounded-lg font-black uppercase text-[8px] tracking-wider hover:bg-zinc-800 transition-all cursor-pointer">
+                  Book Calendar
+                </Link>
+                <Link href="/location" className="col-span-2 py-2 text-center bg-zinc-900 border border-zinc-800 text-white rounded-lg font-black uppercase text-[8px] tracking-wider hover:bg-zinc-800 transition-all cursor-pointer">
+                  Location
+                </Link>
+              </div>
             </div>
           )}
 
           {/* OAuth Buttons - rendered on Login & Signup */}
           {(authMode === 'login' || authMode === 'signup') && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div>
                 <button
                   type="button"
                   onClick={() => handleOAuthLogin('google')}
-                  className="py-3 px-4 rounded-xl border border-zinc-850 bg-zinc-900/20 hover:border-zinc-700 transition-all flex items-center justify-center gap-2 text-[10px] uppercase font-black tracking-wider cursor-pointer"
+                  className="w-full py-3 px-4 rounded-xl border border-zinc-850 bg-[#1C1C1C] hover:bg-zinc-900 hover:border-zinc-700 transition-all flex items-center justify-center gap-2 text-[10px] uppercase font-black tracking-wider cursor-pointer text-white"
                 >
-                  <Chrome size={12} className="text-zinc-400" /> Google
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleOAuthLogin('apple')}
-                  className="py-3 px-4 rounded-xl border border-zinc-850 bg-zinc-900/20 hover:border-zinc-700 transition-all flex items-center justify-center gap-2 text-[10px] uppercase font-black tracking-wider cursor-pointer"
-                >
-                  <svg className="w-3 h-3 fill-zinc-400" viewBox="0 0 24 24">
-                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-1 .04-2.2.67-2.92 1.49-.62.71-1.16 1.85-1.01 2.96 1.12.09 2.27-.58 2.94-1.39z"/>
-                  </svg>
-                  Apple
+                  <Chrome size={12} className="text-[#C9A961]" /> Sign In with Google
                 </button>
               </div>
 
@@ -502,88 +515,120 @@ export default function LoginPage() {
 
 
           {authMode === 'signup' && (
-            <form onSubmit={handleSignUp} className="space-y-4 mt-6">
-              <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold text-zinc-450 tracking-wider">Name</label>
-                <div className="relative">
+            <div className="space-y-4 mt-6">
+              {/* Classification Tab Selector */}
+              <div className="flex bg-zinc-900/50 p-1.5 rounded-xl border border-zinc-850 gap-1.5 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setStudentType('new')}
+                  className={`flex-1 py-2 text-[9px] uppercase font-black tracking-wider rounded-lg transition-all cursor-pointer ${
+                    studentType === 'new' ? 'bg-[#C9A961] text-black' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  New Student
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStudentType('existing')}
+                  className={`flex-1 py-2 text-[9px] uppercase font-black tracking-wider rounded-lg transition-all cursor-pointer ${
+                    studentType === 'existing' ? 'bg-[#C9A961] text-black' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  Existing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStudentType('session')}
+                  className={`flex-1 py-2 text-[9px] uppercase font-black tracking-wider rounded-lg transition-all cursor-pointer ${
+                    studentType === 'session' ? 'bg-[#C9A961] text-black' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  Session
+                </button>
+              </div>
+
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold text-zinc-450 tracking-wider">Full Name</label>
+                  <div className="relative">
+                    <input
+                      required
+                      type="text"
+                      placeholder="Juan dela Cruz"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full bg-zinc-900/40 border border-zinc-800 rounded-xl pl-4 pr-10 py-3 text-xs text-white focus:outline-none focus:border-[#C9A961] transition-all"
+                    />
+                    <User size={15} className="absolute right-3.5 top-3.5 text-zinc-550" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold text-zinc-450 tracking-wider">Email Address</label>
                   <input
                     required
-                    type="text"
-                    placeholder="Juan dela Cruz"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-zinc-900/40 border border-zinc-800 rounded-xl pl-4 pr-10 py-3 text-xs text-white focus:outline-none focus:border-[#C9A961] transition-all"
+                    type="email"
+                    placeholder="juan@gmail.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-zinc-900/40 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#C9A961] transition-all"
                   />
-                  <User size={15} className="absolute right-3.5 top-3.5 text-zinc-550" />
                 </div>
-              </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold text-zinc-450 tracking-wider">Email Address</label>
-                <input
-                  required
-                  type="email"
-                  placeholder="juan@gmail.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-zinc-900/40 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#C9A961] transition-all"
-                />
-              </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold text-zinc-450 tracking-wider">Enter Password</label>
+                  <div className="relative">
+                    <input
+                      required
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full bg-zinc-900/40 border border-zinc-800 rounded-xl pl-4 pr-10 py-3 text-xs text-white focus:outline-none focus:border-[#C9A961] transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3 text-zinc-500 hover:text-white"
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold text-zinc-450 tracking-wider">Enter New Password</label>
-                <div className="relative">
+                <div className="flex items-start gap-2.5 pt-2 select-none">
                   <input
                     required
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-zinc-900/40 border border-zinc-800 rounded-xl pl-4 pr-10 py-3 text-xs text-white focus:outline-none focus:border-[#C9A961] transition-all"
+                    id="agree-checkbox"
+                    type="checkbox"
+                    checked={agreeTerms}
+                    onChange={(e) => setAgreeTerms(e.target.checked)}
+                    className="w-4 h-4 mt-0.5 accent-[#C9A961] cursor-pointer"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-zinc-500 hover:text-white"
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
+                  <label htmlFor="agree-checkbox" className="text-[10px] text-zinc-400 leading-relaxed cursor-pointer">
+                    I agree to the <Link href="/terms" className="text-[#C9A961] hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-[#C9A961] hover:underline">Privacy Policy</Link>
+                  </label>
                 </div>
-              </div>
 
-              <div className="flex items-start gap-2.5 pt-2 select-none">
-                <input
-                  required
-                  id="agree-checkbox"
-                  type="checkbox"
-                  checked={agreeTerms}
-                  onChange={(e) => setAgreeTerms(e.target.checked)}
-                  className="w-4 h-4 mt-0.5 accent-[#C9A961] cursor-pointer"
-                />
-                <label htmlFor="agree-checkbox" className="text-[10px] text-zinc-400 leading-relaxed cursor-pointer">
-                  I agree to the <Link href="/terms" className="text-[#C9A961] hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-[#C9A961] hover:underline">Privacy Policy</Link>
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full mt-2 py-3.5 rounded-xl bg-[#C9A961] hover:bg-[#b09352] text-black font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5"
-              >
-                {loading ? 'Creating Account...' : 'Continue'}
-              </button>
-
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full mt-2 py-3.5 rounded-xl bg-[#C9A961] hover:bg-[#b09352] text-black font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+                >
+                  {loading ? 'Creating Account...' : 'Continue'}
+                </button>
+              </form>
               <p className="text-center text-[10px] text-zinc-400 mt-4">
                 Already have an account?{' '}
                 <button 
                   type="button" 
                   onClick={() => switchMode('login')}
-                  className="text-[#C9A961] font-bold hover:underline uppercase"
+                  className="text-[#C9A961] font-bold hover:underline uppercase cursor-pointer"
                 >
                   Login
                 </button>
               </p>
-            </form>
+            </div>
           )}
 
           {authMode === 'forgot' && (
